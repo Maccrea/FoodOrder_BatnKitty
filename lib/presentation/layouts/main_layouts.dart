@@ -19,7 +19,6 @@ class MainLayout extends StatelessWidget {
       backgroundColor: BatKittyTheme.bgDark,
       body: Row(
         children: [
-          // 1. HIGH-END LUXURY SIDEBAR
           Container(
             width: 270,
             decoration: const BoxDecoration(
@@ -29,7 +28,6 @@ class MainLayout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Brand Header with Gradient Aura
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
                   child: Row(
@@ -89,7 +87,6 @@ class MainLayout extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Navigation Section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -108,6 +105,7 @@ class MainLayout extends StatelessWidget {
                         ),
                       ),
                       _buildNavItem(context, 'dashboard', 'Home / Dashboard', Icons.grid_view_rounded),
+                      _buildNavItem(context, 'menu', 'Menu Management', Icons.restaurant_menu_rounded),
                       _buildNavItem(context, 'cashier', 'Kasir & Pesanan', Icons.point_of_sale_rounded),
                       _buildNavItem(context, 'routes', 'Manifes Kurir', Icons.local_shipping_outlined),
                       _buildNavItem(context, 'finance', 'Keuangan & Omzet', Icons.account_balance_wallet_outlined),
@@ -117,7 +115,6 @@ class MainLayout extends StatelessWidget {
                 
                 const Spacer(),
                 
-                // Minimalist Live Sync Badge
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Container(
@@ -158,11 +155,9 @@ class MainLayout extends StatelessWidget {
             ),
           ),
 
-          // 2. MAIN CONTENT AREA
           Expanded(
             child: Column(
               children: [
-                // Top Navigation Bar
                 Container(
                   height: 76,
                   padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -173,37 +168,7 @@ class MainLayout extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: BatKittyTheme.hotPink.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: BatKittyTheme.hotPink.withOpacity(0.2)),
-                            ),
-                            child: const Text(
-                              "🦇🎀 SECURE DESKTOP KERNEL",
-                              style: TextStyle(
-                                color: BatKittyTheme.pinkGlow,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Text(
-                          //   "// MODULE : ${activePage.toUpperCase()}",
-                          //   style: const TextStyle(
-                          //     color: BatKittyTheme.textMuted,
-                          //     fontSize: 11,
-                          //     fontWeight: FontWeight.w700,
-                          //     letterSpacing: 1.2,
-                          //   ),
-                          // ),
-                        ],
-                      ),
+                      
                       Row(
                         children: [
                           Container(
@@ -241,7 +206,6 @@ class MainLayout extends StatelessWidget {
                   ),
                 ),
 
-                // Workspace Body
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(32),

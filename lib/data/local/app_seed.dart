@@ -5,244 +5,213 @@ const appSeed = {
       'name': 'Admin BatKitty',
       'email': 'admin@batkitty.id',
       'password': 'admin123',
-      'created_at': '2026-05-01T08:00:00Z',
+      'created_at': '2026-08-01T08:00:00Z',
     },
     {
       'id': 2,
       'name': 'Kasir Utama',
       'email': 'kasir@batkitty.id',
       'password': 'kasir123',
-      'created_at': '2026-05-10T09:00:00Z',
-    },
-  ],
-  'customers': [
-    {
-      'id': 1,
-      'name': 'Budi Santoso',
-      'phone': '081234567890',
-      'created_at': '2026-05-02T09:15:00Z',
-    },
-    {
-      'id': 2,
-      'name': 'Siti Rahma',
-      'phone': '081987654321',
-      'created_at': '2026-05-05T11:20:00Z',
-    },
-    {
-      'id': 3,
-      'name': 'Ahmad Fauzi',
-      'phone': '081122334455',
-      'created_at': '2026-05-08T13:40:00Z',
-    },
-    {
-      'id': 4,
-      'name': 'Dina Putri',
-      'phone': '081556677889',
-      'created_at': '2026-05-15T07:12:00Z',
+      'created_at': '2026-08-10T09:00:00Z',
     },
   ],
   'menus': [
-    {
-      'id': 1,
-      'name': 'Mystery Box Ayam Bakar',
-      'base_price': 15000,
-      'version': 'V.1',
-      'category': 'regular',
-      'is_active': true,
-    },
-    {
-      'id': 2,
-      'name': 'Nasi Pecel Madiun Special',
-      'base_price': 18000,
-      'version': 'V.1',
-      'category': 'regular',
-      'is_active': true,
-    },
-    {
-      'id': 3,
-      'name': 'Cutting Package',
-      'base_price': 0,
-      'version': 'V.2',
-      'category': 'diet_package',
-      'is_active': true,
-    },
-    {
-      'id': 4,
-      'name': 'Executive Custom Meal Box',
-      'base_price': 0,
-      'version': 'V.3',
-      'category': 'custom',
-      'is_active': true,
-    },
-    {
-      'id': 5,
-      'name': 'Snack Box Arisan',
-      'base_price': 12000,
-      'version': 'V.1',
-      'category': 'snack_box',
-      'is_active': true,
-    },
+    {'id': 1, 'name': 'Steak + Mashed Potato', 'base_price': 30000, 'version': 'V.1', 'category': 'regular', 'is_active': true},
+    {'id': 2, 'name': 'Steak + Mashed Potato + Sayur', 'base_price': 35000, 'version': 'V.1', 'category': 'regular', 'is_active': true},
+    {'id': 3, 'name': 'Dimsum Goreng (10k/4pcs)', 'base_price': 10000, 'version': 'V.1', 'category': 'snack_box', 'is_active': true},
+    {'id': 4, 'name': 'Dimsum Goreng (3k/pcs)', 'base_price': 3000, 'version': 'V.1', 'category': 'snack_box', 'is_active': true},
+    {'id': 5, 'name': 'Udang Keju (3pcs)', 'base_price': 15000, 'version': 'V.1', 'category': 'snack_box', 'is_active': true},
+    {'id': 6, 'name': 'Cheesy Melt Burger', 'base_price': 15000, 'version': 'V.1', 'category': 'regular', 'is_active': true},
   ],
-  'orders': [
-    {
-      'id': 1001,
-      'customer_id': 1,
-      'total_price': 44000,
-      'delivery_fee': 5000,
-      'delivery_type': 'delivery',
-      'delivery_address': 'Jl. Prof. Sudharto No.12, Tembalang',
-      'lat_long': '-7.0472,110.4423',
-      'status': 'Preparing',
-      'created_at': '2026-06-05T10:30:00Z',
-    },
-    {
-      'id': 1002,
-      'customer_id': 2,
-      'total_price': 105000,
-      'delivery_fee': 0,
-      'delivery_type': 'pickup',
-      'delivery_address': null,
-      'lat_long': null,
-      'status': 'Completed',
-      'created_at': '2026-06-04T11:15:00Z',
-    },
-    {
-      'id': 1003,
-      'customer_id': 3,
-      'total_price': 54000,
-      'delivery_fee': 6000,
-      'delivery_type': 'delivery',
-      'delivery_address': 'Jl. Ngesrep Timur V No.8',
-      'lat_long': '-7.0569,110.4405',
-      'status': 'Completed',
-      'created_at': '2026-06-03T12:00:00Z',
-    },
-    {
-      'id': 1004,
-      'customer_id': 4,
-      'total_price': 78000,
-      'delivery_fee': 7000,
-      'delivery_type': 'delivery',
-      'delivery_address': 'Jl. Sirojudin No.45, Tembalang',
-      'lat_long': '-7.0501,110.4378',
-      'status': 'Delivering',
-      'created_at': '2026-06-02T14:25:00Z',
-    },
-  ],
-  'order_items': [
-    {
-      'id': 1,
-      'order_id': 1001,
-      'menu_id': 1,
-      'is_custom': false,
-      'unit_price': 15000,
-      'custom_notes': null,
-      'duration_days': 1,
-      'meals_per_day': 1,
-    },
-    {
-      'id': 2,
-      'order_id': 1002,
-      'menu_id': 2,
-      'is_custom': false,
-      'unit_price': 18000,
-      'custom_notes': 'Tambahkan sambal terpisah',
-      'duration_days': 3,
-      'meals_per_day': 2,
-    },
-    {
-      'id': 3,
-      'order_id': 1003,
-      'menu_id': 3,
-      'is_custom': true,
-      'unit_price': 20000,
-      'custom_notes': 'Tanpa gula, tinggi protein',
-      'duration_days': 5,
-      'meals_per_day': 1,
-    },
-    {
-      'id': 4,
-      'order_id': 1004,
-      'menu_id': 4,
-      'is_custom': true,
-      'unit_price': 25000,
-      'custom_notes': 'Porsi lebih banyak untuk 2 orang',
-      'duration_days': 2,
-      'meals_per_day': 2,
-    },
-  ],
-  'delivery_schedules': [
-    {
-      'id': 1,
-      'order_id': 1001,
-      'scheduled_date': '2026-06-05',
-      'status': 'Pending',
-    },
-    {
-      'id': 2,
-      'order_id': 1002,
-      'scheduled_date': '2026-06-04',
-      'status': 'Delivered',
-    },
-    {
-      'id': 3,
-      'order_id': 1003,
-      'scheduled_date': '2026-06-03',
-      'status': 'Delivered',
-    },
-    {
-      'id': 4,
-      'order_id': 1004,
-      'scheduled_date': '2026-06-02',
-      'status': 'Delivering',
-    },
+  'expenses': [
+    {'id': 1, 'title': 'Belanja Superindo', 'amount': 26000, 'date': '2026-08-31'},
   ],
   'vouchers': [
     {
       'id': 1,
       'customer_id': 1,
-      'order_id_applied': 1002,
-      'discount_amount': 8000,
+      'order_id_applied': 1,
+      'discount_amount': 5000,
+      'keterangan_diskon': 'Pelanggan Pertama',
       'is_redeemed': true,
     },
     {
       'id': 2,
-      'customer_id': 3,
+      'customer_id': 5,
       'order_id_applied': null,
-      'discount_amount': 5000,
+      'discount_amount': 2000,
+      'keterangan_diskon': 'Promo Member',
       'is_redeemed': false,
     },
   ],
-  'recent_orders': [
-    {'id': '#ORD-092', 'customer': 'Budi Santoso', 'type': 'Delivery', 'amount': 44000, 'status': 'Preparing'},
-    {'id': '#ORD-091', 'customer': 'Siti Rahma', 'type': 'Pickup', 'amount': 105000, 'status': 'Completed'},
-    {'id': '#ORD-090', 'customer': 'Ahmad Fauzi', 'type': 'Delivery', 'amount': 54000, 'status': 'Completed'},
-    {'id': '#ORD-089', 'customer': 'Dina Putri', 'type': 'Delivery', 'amount': 78000, 'status': 'Delivering'},
-  ],
-  'delivery_tasks': [
+  'customers': [
     {
-      'id': '#ORD-092',
-      'customer': 'Budi Santoso',
-      'phone': '081234567890',
-      'address': 'Jl. Prof. Sudharto No.12, Tembalang',
-      'time': '10:30',
-      'status': 'Pending',
+      'id': 1,
+      'name': 'Fiona',
+      'phone': '082327299404',
+      'created_at': '2026-08-16T09:15:00Z',
+      'orders': [
+        {
+          'id': 1,
+          'tanggal_order': '2026-08-16',
+          'tanggal_pengambilan': '2026-08-18',
+          'total_price': 25000,
+          'delivery_fee': 0,
+          'delivery_type': 'Pickup',
+          'delivery_address': null,
+          'status_bayar': 'Lunas',
+          'status_masak': 'Selesai',
+          'items': [
+            {'menu_name': 'Steak + Mashed Potato', 'quantity': 1, 'unit_price': 30000, 'custom_notes': null}
+          ],
+          'review': 'enaak',
+        }
+      ]
     },
     {
-      'id': '#ORD-089',
-      'customer': 'Siti Rahma',
-      'phone': '081987654321',
-      'address': 'Jl. Sirojudin No.45, Tembalang',
-      'time': '11:00',
-      'status': 'Delivering',
+      'id': 2,
+      'name': 'Shinta',
+      'phone': '085162585792',
+      'created_at': '2026-08-22T11:20:00Z',
+      'orders': [
+        {
+          'id': 2,
+          'tanggal_order': '2026-08-22',
+          'tanggal_pengambilan': '2026-08-24',
+          'total_price': 35000,
+          'delivery_fee': 0,
+          'delivery_type': 'Pickup',
+          'delivery_address': null,
+          'status_bayar': 'Lunas',
+          'status_masak': 'Selesai',
+          'items': [
+            {'menu_name': 'Steak + Mashed Potato + Sayur', 'quantity': 1, 'unit_price': 35000, 'custom_notes': null}
+          ],
+          'review': 'enaakkkk, cm yg mashed potato agak kepedesan.',
+        }
+      ]
     },
     {
-      'id': '#ORD-085',
-      'customer': 'Ahmad Fauzi',
-      'phone': '081122334455',
-      'address': 'Jl. Ngesrep Timur V No.8',
-      'time': '12:30',
-      'status': 'Delivered',
+      'id': 3,
+      'name': 'Chelsea',
+      'phone': '08973189288',
+      'created_at': '2026-08-24T13:40:00Z',
+      'orders': [
+        {
+          'id': 3,
+          'tanggal_order': '2026-08-24',
+          'tanggal_pengambilan': '2026-08-24',
+          'total_price': 25000,
+          'delivery_fee': 5000,
+          'delivery_type': 'Delivery',
+          'delivery_address': 'Puri',
+          'status_bayar': 'Lunas',
+          'status_masak': 'Selesai',
+          'items': [
+            {'menu_name': 'Dimsum Goreng (10k/4pcs)', 'quantity': 2, 'unit_price': 10000, 'custom_notes': 'tambahan saus'}
+          ],
+          'review': null,
+        }
+      ]
     },
+    {
+      'id': 4,
+      'name': 'Charlene',
+      'phone': '081556677889',
+      'created_at': '2026-08-26T07:12:00Z',
+      'orders': [
+        {
+          'id': 4,
+          'tanggal_order': '2026-08-26',
+          'tanggal_pengambilan': '2026-08-28',
+          'total_price': 36000,
+          'delivery_fee': 5000,
+          'delivery_type': 'Delivery',
+          'delivery_address': 'Jl. Prof. Sudharto No. 10',
+          'status_bayar': 'Lunas',
+          'status_masak': 'Selesai',
+          'items': [
+            {'menu_name': 'Dimsum Goreng (3k/pcs)', 'quantity': 12, 'unit_price': 3000, 'custom_notes': null}
+          ],
+          'review': null,
+        },
+        {
+          'id': 6,
+          'tanggal_order': '2026-08-28',
+          'tanggal_pengambilan': '2026-08-30',
+          'total_price': 90000,
+          'delivery_fee': 5000,
+          'delivery_type': 'Delivery',
+          'delivery_address': 'Jl. Prof. Sudharto No. 10',
+          'status_bayar': 'Lunas',
+          'status_masak': 'Selesai',
+          'items': [
+            {'menu_name': 'Dimsum Goreng (3k/pcs)', 'quantity': 30, 'unit_price': 3000, 'custom_notes': null}
+          ],
+          'review': null,
+        }
+      ]
+    },
+    {
+      'id': 5,
+      'name': 'Egbert',
+      'phone': '085713214558',
+      'created_at': '2026-08-27T08:00:00Z',
+      'orders': [
+        {
+          'id': 5,
+          'tanggal_order': '2026-08-26',
+          'tanggal_pengambilan': '2026-08-29',
+          'total_price': 69000,
+          'delivery_fee': 2000,
+          'delivery_type': 'Delivery',
+          'delivery_address': 'Setiabudi Heights',
+          'status_bayar': 'Lunas',
+          'status_masak': 'Selesai',
+          'items': [
+            {'menu_name': 'Dimsum Goreng (3k/pcs)', 'quantity': 23, 'unit_price': 3000, 'custom_notes': null}
+          ],
+          'review': null,
+        }
+      ]
+    },
+    {
+      'id': 6,
+      'name': 'Janice',
+      'phone': '0895619811892',
+      'created_at': '2026-08-28T09:00:00Z',
+      'orders': [
+        {
+          'id': 7,
+          'tanggal_order': '2026-08-28',
+          'tanggal_pengambilan': '2026-09-04',
+          'total_price': 30000,
+          'delivery_fee': 5000,
+          'delivery_type': 'Delivery',
+          'delivery_address': 'Jl. Sirojudin No.45, Tembalang',
+          'status_bayar': 'Lunas',
+          'status_masak': 'Proses',
+          'items': [
+            {'menu_name': 'Udang Keju (3pcs)', 'quantity': 2, 'unit_price': 15000, 'custom_notes': null}
+          ],
+          'review': null,
+        },
+        {
+          'id': 8,
+          'tanggal_order': '2026-08-28',
+          'tanggal_pengambilan': '2026-09-04',
+          'total_price': 15000,
+          'delivery_fee': 0,
+          'delivery_type': 'Pickup',
+          'delivery_address': null,
+          'status_bayar': 'Lunas',
+          'status_masak': 'Proses',
+          'items': [
+            {'menu_name': 'Cheesy Melt Burger', 'quantity': 1, 'unit_price': 15000, 'custom_notes': null}
+          ],
+          'review': null,
+        }
+      ]
+    }
   ],
 };

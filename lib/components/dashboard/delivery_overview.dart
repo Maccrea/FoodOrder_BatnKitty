@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/theme.dart';
+import '../../../data/local/app_seed.dart';
 
 class DeliveryOverview extends StatelessWidget {
   const DeliveryOverview({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final rawCustomers = (appSeed['customers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    
+    List<Map<String, dynamic>> deliveryOrders = [];
+    for (var cust in rawCustomers) {
+      final custOrders = (cust['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      for (var ord in custOrders) {
+        if (ord['delivery_type'] == 'Delivery') {
+          deliveryOrders.add(ord);
+        }
+      }
+    }
+
+    int totalDelivery = deliveryOrders.isEmpty ? 1 : deliveryOrders.length;
+    int pendingCount = deliveryOrders.where((o) => o['status_masak'] == 'Proses').length;
+    int deliveringCount = 0; 
+    int deliveredCount = deliveryOrders.where((o) => o['status_masak'] == 'Selesai').length;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -17,42 +35,44 @@ class DeliveryOverview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.local_shipping_rounded, color: BatKittyTheme.hotPink, size: 17),
-              SizedBox(width: 9),
-              Text(
-                'Delivery Overview',
-                style: TextStyle(color: BatKittyTheme.textMain, fontSize: 13, fontWeight: FontWeight.w800),
+              Row(
+                children: [
+                  Icon(Icons.local_shipping_rounded, color: BatKittyTheme.hotPink, size: 17),
+                  SizedBox(width: 9),
+                  Text(
+                    'Delivery Overview',
+                    style: TextStyle(color: BatKittyTheme.textMain, fontSize: 13, fontWeight: FontWeight.w800),
+                  ),
+                ],
               ),
-              Spacer(),
               Text(
                 'Manage',
                 style: TextStyle(color: BatKittyTheme.pinkGlow, fontSize: 9.5, fontWeight: FontWeight.w700),
               ),
             ],
           ),
-          const SizedBox(height: 15),
-          _operationProgress(label: 'Pending', value: 2, total: 8, color: Colors.amberAccent),
-          const SizedBox(height: 18),
-          _operationProgress(label: 'Delivering', value: 3, total: 8, color: BatKittyTheme.hotPink),
-          const SizedBox(height: 18),
-          _operationProgress(label: 'Delivered', value: 3, total: 8, color: Colors.greenAccent),
-          const SizedBox(height: 22),
+          const SizedBox(height: 20),
+          _buildProgressRow('Pending', pendingCount, totalDelivery, Colors.amberAccent),
+          const SizedBox(height: 14),
+          _buildProgressRow('Delivering', deliveringCount, totalDelivery, BatKittyTheme.hotPink),
+          const SizedBox(height: 14),
+          _buildProgressRow('Delivered', deliveredCount, totalDelivery, Colors.greenAccent),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(13),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: BatKittyTheme.surfaceElevated,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: const Row(
               children: [
-                Icon(Icons.schedule_rounded, color: BatKittyTheme.textMuted, size: 16),
-                SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    'Next route update at 07:00 WIB',
-                    style: TextStyle(color: BatKittyTheme.textMuted, fontSize: 10),
-                  ),
+                Icon(Icons.access_time_rounded, size: 14, color: BatKittyTheme.textSubtle),
+                SizedBox(width: 8),
+                Text(
+                  'Next route update at 07:00 WIB',
+                  style: TextStyle(color: BatKittyTheme.textSubtle, fontSize: 10, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -62,25 +82,27 @@ class DeliveryOverview extends StatelessWidget {
     );
   }
 
-  Widget _operationProgress({required String label, required int value, required int total, required Color color}) {
+  Widget _buildProgressRow(String label, int count, int total, Color color) {
+    double progress = total > 0 ? (count / total).clamp(0.0, 1.0) : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 10.5, fontWeight: FontWeight.w600)),
-            Text('$value / $total', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800)),
+            Text(label, style: const TextStyle(color: BatKittyTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+            Text('$count / $total', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800)),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
-            value: value / total,
-            minHeight: 6,
+            value: progress,
             backgroundColor: BatKittyTheme.surfaceElevated,
             valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 6,
           ),
         ),
       ],

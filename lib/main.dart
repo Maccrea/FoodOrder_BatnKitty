@@ -3,7 +3,8 @@ import 'presentation/layouts/main_layouts.dart';
 import 'presentation/pages/dashboard_page.dart';
 import 'presentation/pages/cashier_page.dart';
 import 'presentation/pages/financial_page.dart';
-import 'presentation/pages/delivery_page.dart'; // <-- Tambahkan import ini
+import 'presentation/pages/delivery_page.dart';
+import 'presentation/pages/menu_management_page.dart';
 
 void main() {
   runApp(const BatKittyCateringApp());
@@ -41,7 +42,9 @@ class _BatKittyCateringAppState extends State<BatKittyCateringApp> {
       case 'orders':
         return const CashierPage();
       case 'routes':
-        return const DeliveryPage(); // <-- Hubungkan ke modul rute kurir
+        return const DeliveryPage();  
+      case 'menu':
+        return const MenuManagementPage();  
       case 'finance':
         return const FinancialPage();
       default:

@@ -4,11 +4,37 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/local/app_seed.dart';
 
 class RecentOrders extends StatelessWidget {
-  const RecentOrders({super.key});
+  final VoidCallback? onViewAllPressed;
+
+  const RecentOrders({super.key, this.onViewAllPressed});
 
   @override
   Widget build(BuildContext context) {
-    final orders = (appSeed['recent_orders'] as List).cast<Map<String, dynamic>>();
+    final rawCustomers = (appSeed['customers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+    List<Map<String, dynamic>> allOrders = [];
+    for (var cust in rawCustomers) {
+      final custOrders = (cust['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      for (var ord in custOrders) {
+        allOrders.add({
+          ...ord,
+          'customer_name': cust['name'],
+        });
+      }
+    }
+
+    allOrders.sort((a, b) => (b['id'] as int).compareTo(a['id'] as int));
+    final recentOrders = allOrders.take(4).toList();
+
+    final orders = recentOrders.map((order) {
+      return {
+        'id': '#ORD-09${order['id']}',
+        'customer': order['customer_name'],
+        'type': order['delivery_type'] ?? 'Pickup',
+        'amount': (order['total_price'] ?? 0) + (order['delivery_fee'] ?? 0),
+        'status': order['status_masak'] == 'Selesai' ? 'Completed' : 'Preparing',
+      };
+    }).toList();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -29,9 +55,12 @@ class RecentOrders extends StatelessWidget {
                 style: TextStyle(color: BatKittyTheme.textMain, fontSize: 13, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
-              Text(
-                'View all',
-                style: TextStyle(color: BatKittyTheme.pinkGlow, fontSize: 9.5, fontWeight: FontWeight.w700),
+              InkWell(
+                onTap: onViewAllPressed,
+                child: Text(
+                  'View all',
+                  style: TextStyle(color: BatKittyTheme.pinkGlow, fontSize: 9.5, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
