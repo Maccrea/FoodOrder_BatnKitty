@@ -25,8 +25,7 @@ class DeliveryHeader extends StatelessWidget {
               onPrimary: Colors.white,
               surface: BatKittyTheme.surfaceDark,
               onSurface: BatKittyTheme.textMain,
-            ),
-            dialogBackgroundColor: BatKittyTheme.surfaceDark,
+            ), dialogTheme: DialogThemeData(backgroundColor: BatKittyTheme.surfaceDark),
           ),
           child: child!,
         );

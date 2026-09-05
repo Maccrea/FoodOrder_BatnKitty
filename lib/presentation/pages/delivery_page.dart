@@ -63,6 +63,7 @@ class _DeliveryPageState extends State<DeliveryPage> {
         task['status'] = 'Delivering';
       } else if (task['status'] == 'Delivering') {
         task['status'] = 'Delivered';
+        // Murni hanya mengubah status di kurir, tidak memicu WA lagi di sini.
       }
     });
   }
@@ -82,6 +83,7 @@ class _DeliveryPageState extends State<DeliveryPage> {
     final deliveredCount = targetTasks.where((task) => task['status'] == 'Delivered').length;
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

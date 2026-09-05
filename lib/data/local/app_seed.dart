@@ -124,10 +124,10 @@ const appSeed = {
           'id': 4,
           'tanggal_order': '2026-08-26',
           'tanggal_pengambilan': '2026-08-28',
-          'total_price': 36000,
+          'total_price': 41000,
           'delivery_fee': 5000,
           'delivery_type': 'Delivery',
-          'delivery_address': 'Jl. Prof. Sudharto No. 10',
+          'delivery_address': 'JKI Injil Kerajaan Holy Stadium',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -142,7 +142,7 @@ const appSeed = {
           'total_price': 90000,
           'delivery_fee': 5000,
           'delivery_type': 'Delivery',
-          'delivery_address': 'Jl. Prof. Sudharto No. 10',
+          'delivery_address': 'Tawangmas',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -164,8 +164,7 @@ const appSeed = {
           'tanggal_pengambilan': '2026-08-29',
           'total_price': 69000,
           'delivery_fee': 2000,
-          'delivery_type': 'Delivery',
-          'delivery_address': 'Setiabudi Heights',
+          'delivery_type': 'Pickup',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -188,7 +187,7 @@ const appSeed = {
           'total_price': 30000,
           'delivery_fee': 5000,
           'delivery_type': 'Delivery',
-          'delivery_address': 'Jl. Sirojudin No.45, Tembalang',
+          'delivery_address': 'Cluster Graha Safira, Jl. Tambak Boyo No.05',
           'status_bayar': 'Lunas',
           'status_masak': 'Proses',
           'items': [
@@ -212,6 +211,6 @@ const appSeed = {
           'review': null,
         }
       ]
-    }
+    },
   ],
 };

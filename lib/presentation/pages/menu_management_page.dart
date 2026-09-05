@@ -13,11 +13,20 @@ class MenuManagementPage extends StatefulWidget {
 class _MenuManagementPageState extends State<MenuManagementPage> {
   late List<Map<String, dynamic>> _menuList;
   String selectedCategoryFilter = 'All';
+  String selectedVersionFilter = 'All';
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _menuList = List<Map<String, dynamic>>.from(appSeed['menus'] ?? []);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _showMenuDialog({Map<String, dynamic>? menuToEdit, int? index}) {
@@ -43,7 +52,7 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                 style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 16, fontWeight: FontWeight.w900),
               ),
               content: SizedBox(
-                width: 400,
+                width: 420,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -87,7 +96,7 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Status Menu Aktif', style: TextStyle(color: BatKittyTheme.textMain, fontSize: 12, fontWeight: FontWeight.w700)),
                         value: isActive,
-                        activeColor: BatKittyTheme.hotPink,
+                        activeThumbColor: BatKittyTheme.hotPink,
                         onChanged: (val) => setDialogState(() => isActive = val),
                       ),
                     ],
@@ -198,32 +207,40 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
 
   @override
   Widget build(BuildContext context) {
+    final availableVersions = ['All', ..._menuList.map((m) => m['version']?.toString() ?? 'V.1').toSet()];
+
+    // Filter gabungan (Pencarian nama + Kategori + Versi)
     final filteredMenus = _menuList.where((menu) {
-      if (selectedCategoryFilter == 'All') return true;
-      return menu['category'] == selectedCategoryFilter;
+      final nameMatches = menu['name'].toString().toLowerCase().contains(searchQuery.toLowerCase());
+      final categoryMatches = selectedCategoryFilter == 'All' || menu['category'] == selectedCategoryFilter;
+      final versionMatches = selectedVersionFilter == 'All' || menu['version'] == selectedVersionFilter;
+      return nameMatches && categoryMatches && versionMatches;
     }).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Utama
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Menu Management & Catalog', style: TextStyle(color: BatKittyTheme.textMain, fontSize: 22, fontWeight: FontWeight.w900)),
+                  Text('Menu Management & Catalog', style: TextStyle(color: BatKittyTheme.textMain, fontSize: 24, fontWeight: FontWeight.w900)),
                   SizedBox(height: 4),
-                  Text('Atur daftar menu, kategori, versi, dan harga dasar secara real-time', style: TextStyle(color: BatKittyTheme.textMuted, fontSize: 12)),
+                  Text('Kelola daftar menu, varian versi, kategori, dan harga dasar secara terpusat', style: TextStyle(color: BatKittyTheme.textMuted, fontSize: 12.5)),
                 ],
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: BatKittyTheme.hotPink,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => _showMenuDialog(),
@@ -232,25 +249,101 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
               ),
             ],
           ),
+          const SizedBox(height: 28),
+
+          // Control Bar Modern: Search + Filter Versi & Kategori
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: BatKittyTheme.surfaceDark,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: BatKittyTheme.borderSubtle),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Baris Pencarian & Dropdown Versi
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) => setState(() => searchQuery = val),
+                        style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 12),
+                        decoration: InputDecoration(
+                          hintText: 'Cari nama menu...',
+                          hintStyle: const TextStyle(color: BatKittyTheme.textSubtle, fontSize: 12),
+                          prefixIcon: const Icon(Icons.search_rounded, color: BatKittyTheme.textSubtle, size: 20),
+                          filled: true,
+                          fillColor: BatKittyTheme.surfaceElevated,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: BatKittyTheme.surfaceElevated,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: BatKittyTheme.borderSubtle),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedVersionFilter,
+                            dropdownColor: BatKittyTheme.surfaceDark,
+                            style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 12, fontWeight: FontWeight.w600),
+                            isExpanded: true,
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: BatKittyTheme.textSubtle),
+                            items: availableVersions.map((v) {
+                              return DropdownMenuItem(value: v, child: Text(v == 'All' ? 'Semua Versi (All)' : 'Versi $v'));
+                            }).toList(),
+                            onChanged: (val) => setState(() => selectedVersionFilter = val ?? 'All'),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: BatKittyTheme.borderSubtle),
+                const SizedBox(height: 16),
+                
+                // Baris Pilihan Kategori (Chips)
+                Row(
+                  children: [
+                    const Text('Kategori:', style: TextStyle(color: BatKittyTheme.textSubtle, fontSize: 11, fontWeight: FontWeight.w700)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: ['All', 'regular', 'snack_box', 'custom', 'diet_package'].map((category) {
+                          bool isSelected = selectedCategoryFilter == category;
+                          String labelName = category == 'All' ? 'Semua Kategori' : category.replaceAll('_', ' ').toUpperCase();
+                          return ChoiceChip(
+                            label: Text(labelName, style: TextStyle(color: isSelected ? Colors.white : BatKittyTheme.textSubtle, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                            selected: isSelected,
+                            selectedColor: BatKittyTheme.hotPink,
+                            backgroundColor: BatKittyTheme.surfaceElevated,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: isSelected ? BatKittyTheme.hotPink : BatKittyTheme.borderSubtle)),
+                            onSelected: (selected) => setState(() => selectedCategoryFilter = category),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
 
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ['All', 'regular', 'snack_box', 'custom', 'diet_package'].map((category) {
-              bool isSelected = selectedCategoryFilter == category;
-              return ChoiceChip(
-                label: Text(category.toUpperCase(), style: TextStyle(color: isSelected ? Colors.white : BatKittyTheme.textSubtle, fontSize: 10, fontWeight: FontWeight.bold)),
-                selected: isSelected,
-                selectedColor: BatKittyTheme.hotPink,
-                backgroundColor: BatKittyTheme.surfaceDark,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: BatKittyTheme.borderSubtle)),
-                onSelected: (selected) => setState(() => selectedCategoryFilter = category),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 20),
-
+          // Tabel Katalog Menu Profesional
           Container(
             decoration: BoxDecoration(
               color: BatKittyTheme.surfaceDark,
@@ -259,8 +352,8 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
             ),
             child: Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                   child: Row(
                     children: [
                       Expanded(flex: 3, child: Text('NAMA MENU', style: TextStyle(color: BatKittyTheme.textSubtle, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: .5))),
@@ -275,9 +368,9 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                 const Divider(height: 1, color: BatKittyTheme.borderSubtle),
                 if (filteredMenus.isEmpty)
                   Container(
-                    padding: const EdgeInsets.all(40),
+                    padding: const EdgeInsets.all(50),
                     alignment: Alignment.center,
-                    child: const Text('Tidak ada menu dalam kategori ini.', style: TextStyle(color: BatKittyTheme.textSubtle, fontSize: 12)),
+                    child: const Text('Tidak ada menu yang sesuai dengan filter pencarian.', style: TextStyle(color: BatKittyTheme.textSubtle, fontSize: 12)),
                   )
                 else
                   ...List.generate(filteredMenus.length, (index) {
@@ -285,7 +378,7 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                     final bool isActive = menu['is_active'] ?? true;
 
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
                       decoration: const BoxDecoration(
                         border: Border(top: BorderSide(color: BatKittyTheme.borderSubtle)),
                       ),
@@ -293,19 +386,30 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                         children: [
                           Expanded(
                             flex: 3,
-                            child: Text(menu['name'], style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                            child: Text(menu['name'], style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 12, fontWeight: FontWeight.w700)),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(menu['category'], style: const TextStyle(color: BatKittyTheme.textMuted, fontSize: 11)),
+                            child: Text(menu['category'].toString().toUpperCase(), style: const TextStyle(color: BatKittyTheme.textMuted, fontSize: 11)),
                           ),
                           Expanded(
                             flex: 1,
-                            child: Text(menu['version'], style: const TextStyle(color: BatKittyTheme.pinkGlow, fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: Container(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: BatKittyTheme.pinkGlow.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: BatKittyTheme.pinkGlow.withOpacity(0.3)),
+                                ),
+                                child: Text(menu['version'], style: const TextStyle(color: BatKittyTheme.pinkGlow, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(formatRupiah((menu['base_price'] as num).toInt()), style: const TextStyle(color: Colors.greenAccent, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                            child: Text(formatRupiah((menu['base_price'] as num).toInt()), style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.w700)),
                           ),
                           Expanded(
                             flex: 1,
@@ -319,7 +423,7 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                                 ),
                                 child: Text(
                                   isActive ? 'Active' : 'Off',
-                                  style: TextStyle(color: isActive ? Colors.greenAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: isActive ? Colors.greenAccent : Colors.redAccent, fontSize: 9.5, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),

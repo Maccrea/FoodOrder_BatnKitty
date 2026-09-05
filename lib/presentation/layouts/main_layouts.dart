@@ -19,8 +19,9 @@ class MainLayout extends StatelessWidget {
       backgroundColor: BatKittyTheme.bgDark,
       body: Row(
         children: [
+          // Sidebar Navigasi Kiri
           Container(
-            width: 270,
+            width: 265,
             decoration: const BoxDecoration(
               color: BatKittyTheme.surfaceDark,
               border: Border(right: BorderSide(color: BatKittyTheme.borderSubtle, width: 1)),
@@ -28,13 +29,14 @@ class MainLayout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                // Logo & Branding Brand
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
                   child: Row(
                     children: [
                       Container(
-                        width: 42,
-                        height: 42,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [BatKittyTheme.hotPink, BatKittyTheme.pinkMuted],
@@ -45,15 +47,15 @@ class MainLayout extends StatelessWidget {
                           boxShadow: [
                             BoxShadow(
                               color: BatKittyTheme.hotPink.withOpacity(0.25),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
                         alignment: Alignment.center,
-                        child: const Text("🦇", style: TextStyle(fontSize: 20)),
+                        child: const Text("🦇", style: TextStyle(fontSize: 18)),
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: 12),
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -62,8 +64,8 @@ class MainLayout extends StatelessWidget {
                             style: TextStyle(
                               color: BatKittyTheme.textMain,
                               fontWeight: FontWeight.w900,
-                              fontSize: 15,
-                              letterSpacing: 1.2,
+                              fontSize: 14,
+                              letterSpacing: 1.1,
                             ),
                           ),
                           SizedBox(height: 2),
@@ -71,8 +73,8 @@ class MainLayout extends StatelessWidget {
                             "ENTERPRISE OS",
                             style: TextStyle(
                               color: BatKittyTheme.textSubtle,
-                              fontSize: 8,
-                              letterSpacing: 2.2,
+                              fontSize: 7.5,
+                              letterSpacing: 2.0,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -85,22 +87,23 @@ class MainLayout extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Divider(color: BatKittyTheme.borderSubtle, height: 1),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
+                // Daftar Menu Navigasi (Core Modules)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Padding(
-                        padding: EdgeInsets.only(left: 12, bottom: 8),
+                        padding: EdgeInsets.only(left: 12, bottom: 10),
                         child: Text(
                           "CORE MODULES",
                           style: TextStyle(
                             color: BatKittyTheme.textSubtle,
-                            fontSize: 9,
+                            fontSize: 8.5,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
+                            letterSpacing: 1.4,
                           ),
                         ),
                       ),
@@ -115,10 +118,11 @@ class MainLayout extends StatelessWidget {
                 
                 const Spacer(),
                 
+                // Indikator Status Node di Bagian Bawah Sidebar
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
                       color: BatKittyTheme.surfaceElevated,
                       borderRadius: BorderRadius.circular(12),
@@ -127,8 +131,8 @@ class MainLayout extends StatelessWidget {
                     child: Row(
                       children: [
                         Container(
-                          width: 7,
-                          height: 7,
+                          width: 8,
+                          height: 8,
                           decoration: const BoxDecoration(
                             color: Colors.greenAccent,
                             shape: BoxShape.circle,
@@ -142,9 +146,9 @@ class MainLayout extends StatelessWidget {
                           "Node Synchronized",
                           style: TextStyle(
                             color: BatKittyTheme.textMuted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.3,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ],
@@ -155,20 +159,21 @@ class MainLayout extends StatelessWidget {
             ),
           ),
 
+          // Area Konten Utama Kanan
           Expanded(
             child: Column(
               children: [
+                // Top App Bar / Header Kanan
                 Container(
-                  height: 76,
+                  height: 72,
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   decoration: const BoxDecoration(
                     color: BatKittyTheme.bgDark,
                     border: Border(bottom: BorderSide(color: BatKittyTheme.borderSubtle, width: 1)),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      
                       Row(
                         children: [
                           Container(
@@ -206,11 +211,9 @@ class MainLayout extends StatelessWidget {
                   ),
                 ),
 
+                // Body Konten Halaman Aktif
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: child,
-                  ),
+                  child: child,
                 ),
               ],
             ),
@@ -228,7 +231,7 @@ class MainLayout extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isActive ? BatKittyTheme.hotPink.withOpacity(0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
