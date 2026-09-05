@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/theme.dart';
-import '../../components/cashier/cashier_customer_card.dart';
-import '../../components/cashier/cashier_fulfillment_card.dart';
-import '../../components/cashier/cashier_menu_card.dart';
-import '../../components/cashier/cashier_order_summary.dart';
-import '../../data/local/app_seed.dart';
+import '../../../core/constants/theme.dart';
+import '../../../components/cashier/cashier_customer_card.dart';
+import '../../../components/cashier/cashier_fulfillment_card.dart';
+import '../../../components/cashier/cashier_menu_card.dart';
+import '../../../components/cashier/cashier_order_summary.dart';
+import '../../../data/local/app_seed.dart';
 
 class CashierPage extends StatefulWidget {
   const CashierPage({super.key});
@@ -46,7 +46,6 @@ class _CashierPageState extends State<CashierPage> {
   );
   final TextEditingController customNotesController = TextEditingController();
 
-  // --- VARIABLE RULES & JADWAL PENGAMBILAN ---
   DateTime? selectedTanggalPengambilan;
   final int maxDailyQuota = 10;
   bool isCloseOrderManual = false;
@@ -83,7 +82,6 @@ class _CashierPageState extends State<CashierPage> {
     super.dispose();
   }
 
-  // --- LOGIKA VALIDASI WAKTU 4 JAM & OPERASIONAL ---
   bool isTimeValid(DateTime targetTime) {
     final minimumAllowed = DateTime.now().add(const Duration(hours: 4));
     return targetTime.isAfter(minimumAllowed);
@@ -237,7 +235,6 @@ class _CashierPageState extends State<CashierPage> {
       allOrdersCount += ((c['orders'] as List?)?.length ?? 0);
     }
 
-    // Validasi kuota 10 order
     if (allOrdersCount >= maxDailyQuota) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kuota harian sudah penuh (10 pesanan)!'), backgroundColor: Colors.red),
@@ -245,7 +242,6 @@ class _CashierPageState extends State<CashierPage> {
       return;
     }
 
-    // Validasi pemilihan jadwal
     if (selectedTanggalPengambilan == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -304,9 +300,9 @@ class _CashierPageState extends State<CashierPage> {
       'delivery_fee': finalDeliveryFee.toInt(),
       'delivery_type': deliveryType == 'delivery' ? 'Delivery' : 'Pickup',
       'delivery_address': deliveryType == 'delivery' ? addressController.text : null,
-      'status_pesanan': 'waiting_approve', // Sesuai ERD
-      'status_bayar': 'unpaid',            // Sesuai ERD
-      'status_masak': 'Pending',           // Sesuai ERD
+      'status_pesanan': 'waiting_approve',   
+      'status_bayar': 'unpaid',            
+      'status_masak': 'Pending',           
       'cancellation_reason': null,
       'items': <Map<String, dynamic>>[
         {
@@ -486,55 +482,6 @@ class _CashierPageState extends State<CashierPage> {
                       onDeliveryChanged: (value) => setState(() => deliveryType = value),
                       onAreaChanged: (value) => setState(() => destinationArea = value),
                       onClassStatusChanged: (value) => setState(() => hasClassToday = value ?? true),
-                    ),
-                    const SizedBox(height: 16),
-                    // Widget Tambahan: Pemilih Jadwal Pengambilan (Aturan 4 Jam)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: BatKittyTheme.surfaceDark,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: BatKittyTheme.borderSubtle),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Jadwal Pengambilan / Kirim',
-                                style: TextStyle(
-                                  color: BatKittyTheme.textMain,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                selectedTanggalPengambilan == null
-                                    ? 'Wajib dipilih (Min. 4 jam dari sekarang)'
-                                    : selectedTanggalPengambilan.toString().substring(0, 16),
-                                style: TextStyle(
-                                  color: selectedTanggalPengambilan == null
-                                      ? Colors.orangeAccent
-                                      : Colors.greenAccent,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: BatKittyTheme.surfaceHighlight,
-                              foregroundColor: BatKittyTheme.textMain,
-                            ),
-                            onPressed: _pickPickupDateTime,
-                            icon: const Icon(Icons.access_time_rounded, size: 16),
-                            label: const Text('Pilih Jadwal', style: TextStyle(fontSize: 11)),
-                          ),
-                        ],
-                      ),
                     ),
                     const SizedBox(height: 16),
                     CashierMenuCard(

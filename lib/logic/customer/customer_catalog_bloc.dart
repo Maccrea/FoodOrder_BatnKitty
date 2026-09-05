@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../data/local/app_seed.dart';
+import '../../data/local/app_seed.dart';
 import 'customer_catalog_state.dart';
 
 abstract class CustomerCatalogEvent {}
@@ -11,7 +11,12 @@ class LoadCustomerCatalogEvent extends CustomerCatalogEvent {
 
 class CreateCustomerOrderEvent extends CustomerCatalogEvent {
   final Map<String, dynamic> order;
-  CreateCustomerOrderEvent(this.order);
+  final String userPhone;
+
+  CreateCustomerOrderEvent({
+    required this.order,
+    required this.userPhone,
+  });
 }
 
 class CancelCustomerOrderEvent extends CustomerCatalogEvent {
@@ -47,10 +52,25 @@ class CustomerCatalogBloc extends Bloc<CustomerCatalogEvent, CustomerCatalogStat
 
   void _onCreateOrder(CreateCustomerOrderEvent event, Emitter<CustomerCatalogState> emit) {
     final updatedOrders = List<Map<String, dynamic>>.from(state.myOrders)..insert(0, event.order);
+
+    final customers = (appSeed['customers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    for (var cust in customers) {
+      if (cust['phone'] == event.userPhone) {
+        final custOrders = (cust['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        cust['orders'] = [event.order, ...custOrders];
+        break;
+      }
+    }
+
+    if (appSeed.containsKey('orders')) {
+      final allOrders = (appSeed['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      appSeed['orders'] = [event.order, ...allOrders];
+    }
+
     emit(state.copyWith(
       myOrders: updatedOrders,
       currentOrdersToday: state.currentOrdersToday + 1,
-      message: 'Pesanan berhasil dikirim.',
+      message: 'Pesanan PO berhasil dibuat dan masuk antrean sistem.',
       isError: false,
     ));
   }
@@ -58,17 +78,6 @@ class CustomerCatalogBloc extends Bloc<CustomerCatalogEvent, CustomerCatalogStat
   void _onCancelOrder(CancelCustomerOrderEvent event, Emitter<CustomerCatalogState> emit) {
     final updatedOrders = state.myOrders.map((order) {
       if (order['id'] == event.orderId) {
-        final schedule = DateTime.parse(order['tanggal_pengambilan']);
-        final cancelDeadline = schedule.subtract(const Duration(hours: 4));
-
-        if (DateTime.now().isAfter(cancelDeadline)) {
-          emit(state.copyWith(
-            message: 'Pembatalan hanya dapat dilakukan maksimal 4 jam sebelum jadwal.',
-            isError: true,
-          ));
-          return order;
-        }
-
         return {
           ...order,
           'status_pesanan': 'cancelled',
@@ -77,6 +86,17 @@ class CustomerCatalogBloc extends Bloc<CustomerCatalogEvent, CustomerCatalogStat
       }
       return order;
     }).toList();
+
+    final customers = (appSeed['customers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    for (var cust in customers) {
+      final custOrders = (cust['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      for (var o in custOrders) {
+        if (o['id'] == event.orderId) {
+          o['status_pesanan'] = 'cancelled';
+          o['cancellation_reason'] = event.reason;
+        }
+      }
+    }
 
     emit(state.copyWith(
       myOrders: updatedOrders,

@@ -107,7 +107,6 @@ class CustomerOrderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Baris 1: ID, Nama Menu, dan Total Harga
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -153,10 +152,8 @@ class CustomerOrderCard extends StatelessWidget {
           const Divider(color: BatKittyTheme.borderSubtle, height: 1),
           const SizedBox(height: 12),
 
-          // Baris 2: Info Pengiriman, Jadwal, Status, dan Tombol Batal
           Row(
             children: [
-              // Badge Porsi & Tipe
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -186,7 +183,6 @@ class CustomerOrderCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              // Tanggal Jadwal Lengkap
               Expanded(
                 child: Row(
                   children: [
@@ -210,7 +206,6 @@ class CustomerOrderCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              // Status Pill
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -235,7 +230,6 @@ class CustomerOrderCard extends StatelessWidget {
                 ),
               ),
 
-              // Tombol Batal
               if (!isCancelled && status == 'waiting_approve') ...[
                 const SizedBox(width: 8),
                 SizedBox(

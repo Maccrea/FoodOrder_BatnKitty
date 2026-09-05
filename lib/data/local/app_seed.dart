@@ -1,4 +1,4 @@
-const appSeed = {
+const Map<String, dynamic> appSeed = {
   'roles': [
     {'id': 1, 'name': 'admin', 'description': 'Owner & Operasional Utama'},
     {'id': 2, 'name': 'staff_dapur', 'description': 'Fokus Masak & Update Status'},
@@ -28,7 +28,6 @@ const appSeed = {
       'password': 'password123',
       'created_at': '2026-02-01T10:00:00.000',
     },
-
   ],
   'menus': [
     {'id': 1, 'name': 'Steak + Mashed Potato', 'base_price': 30000, 'version': 'V.1', 'category': 'regular', 'is_active': true},
@@ -74,6 +73,7 @@ const appSeed = {
           'delivery_fee': 0,
           'delivery_type': 'Pickup',
           'delivery_address': null,
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -97,6 +97,7 @@ const appSeed = {
           'delivery_fee': 0,
           'delivery_type': 'Pickup',
           'delivery_address': null,
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -120,6 +121,7 @@ const appSeed = {
           'delivery_fee': 5000,
           'delivery_type': 'Delivery',
           'delivery_address': 'Puri',
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -143,6 +145,7 @@ const appSeed = {
           'delivery_fee': 5000,
           'delivery_type': 'Delivery',
           'delivery_address': 'JKI Injil Kerajaan Holy Stadium',
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -158,6 +161,7 @@ const appSeed = {
           'delivery_fee': 5000,
           'delivery_type': 'Delivery',
           'delivery_address': 'Tawangmas',
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -180,6 +184,8 @@ const appSeed = {
           'total_price': 69000,
           'delivery_fee': 2000,
           'delivery_type': 'Pickup',
+          'delivery_address': null,
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
           'status_masak': 'Selesai',
           'items': [
@@ -203,8 +209,9 @@ const appSeed = {
           'delivery_fee': 5000,
           'delivery_type': 'Delivery',
           'delivery_address': 'Cluster Graha Safira, Jl. Tambak Boyo No.05',
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
-          'status_masak': 'Proses',
+          'status_masak': 'Selesai',
           'items': [
             {'menu_name': 'Udang Keju (3pcs)', 'quantity': 2, 'unit_price': 15000, 'custom_notes': null}
           ],
@@ -218,10 +225,35 @@ const appSeed = {
           'delivery_fee': 0,
           'delivery_type': 'Pickup',
           'delivery_address': null,
+          'status_pesanan': 'completed',
           'status_bayar': 'Lunas',
-          'status_masak': 'Proses',
+          'status_masak': 'Selesai',
           'items': [
             {'menu_name': 'Cheesy Melt Burger', 'quantity': 1, 'unit_price': 15000, 'custom_notes': null}
+          ],
+          'review': null,
+        }
+      ]
+    },
+    {
+      'id': 7,
+      'name': 'Chelsya',
+      'phone': '081234567890',
+      'created_at': '2026-09-05T10:00:00Z',
+      'orders': [
+        {
+          'id': 9,
+          'tanggal_order': '2026-09-05',
+          'tanggal_pengambilan': '2026-09-07',
+          'total_price': 15000,
+          'delivery_fee': 5000,
+          'delivery_type': 'Delivery',
+          'delivery_address': 'Binus University Semarang, POJ City',
+          'status_pesanan': 'processing',
+          'status_bayar': 'Lunas',
+          'status_masak': 'Cooking',
+          'items': [
+            {'menu_name': 'Dimsum Goreng (3k/pcs)', 'quantity': 5, 'unit_price': 3000, 'custom_notes': null}
           ],
           'review': null,
         }

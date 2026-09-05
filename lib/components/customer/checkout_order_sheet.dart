@@ -24,7 +24,6 @@ class _CheckoutOrderSheetState extends State<CheckoutOrderSheet> {
   String deliveryType = 'Delivery';
   int qty = 1;
 
-  // Cek jam operasional pengantaran/pickup dapur (08:00 - 17:00 WIB)
   bool _isKitchenOperationalHours(TimeOfDay time) {
     const int openHour = 8;
     const int closeHour = 17;
@@ -268,14 +267,12 @@ class _CheckoutOrderSheetState extends State<CheckoutOrderSheet> {
               ),
               const SizedBox(height: 14),
 
-              // Pemilih Jadwal (Minimal H-2 & Jam Operasional 08:00 - 17:00 WIB)
               GestureDetector(
                 onTap: () async {
                   final now = DateTime.now();
                   final earliestDate = DateTime(now.year, now.month, now.day).add(const Duration(days: 2));
                   final latestDate = earliestDate.add(const Duration(days: 14));
 
-                  // 1. Date Picker Bersih dengan Tema BatKitty
                   final pickedDate = await showDatePicker(
                     context: context,
                     initialDate: earliestDate,
@@ -300,7 +297,6 @@ class _CheckoutOrderSheetState extends State<CheckoutOrderSheet> {
 
                   if (!context.mounted) return;
 
-                  // 2. Time Picker Format 24 Jam dengan Tema BatKitty
                   final pickedTime = await showTimePicker(
                     context: context,
                     initialTime: const TimeOfDay(hour: 10, minute: 0),
@@ -324,7 +320,6 @@ class _CheckoutOrderSheetState extends State<CheckoutOrderSheet> {
                   );
                   if (pickedTime == null) return;
 
-                  // Validasi batas jam operasional dapur
                   if (!_isKitchenOperationalHours(pickedTime)) {
                     _showNotification('Jam operasional pengantaran/pickup hanya 08:00 – 17:00 WIB.');
                     return;

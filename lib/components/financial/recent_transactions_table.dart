@@ -26,7 +26,6 @@ class RecentTransactionsTable extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Judul dan Filter Status di Kanan
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
             child: Row(
@@ -47,7 +46,6 @@ class RecentTransactionsTable extends StatelessWidget {
                     ),
                   ],
                 ),
-                // Dropdown / Filter Status Chips yang elegan
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
@@ -92,7 +90,6 @@ class RecentTransactionsTable extends StatelessWidget {
           ),
           const Divider(height: 1, color: BatKittyTheme.borderSubtle),
 
-          // Isi Data Tabel
           if (filteredTransactions.isEmpty)
             Container(
               padding: const EdgeInsets.all(50),
@@ -114,7 +111,6 @@ class RecentTransactionsTable extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // Kolom Order ID
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -122,7 +118,6 @@ class RecentTransactionsTable extends StatelessWidget {
                           style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 11.5, fontWeight: FontWeight.w800),
                         ),
                       ),
-                      // Kolom Customer
                       Expanded(
                         flex: 3,
                         child: Text(
@@ -130,7 +125,6 @@ class RecentTransactionsTable extends StatelessWidget {
                           style: const TextStyle(color: BatKittyTheme.textMain, fontSize: 11.5, fontWeight: FontWeight.w700),
                         ),
                       ),
-                      // Kolom Detail Menu (Gabungan jika lebih dari 1 item)
                       Expanded(
                         flex: 3,
                         child: Text(
@@ -140,7 +134,6 @@ class RecentTransactionsTable extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // Kolom Harga Makanan Murni
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -148,7 +141,6 @@ class RecentTransactionsTable extends StatelessWidget {
                           style: const TextStyle(color: Colors.greenAccent, fontSize: 11.5, fontWeight: FontWeight.w700),
                         ),
                       ),
-                      // Kolom Ongkir / Pickup
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -156,7 +148,6 @@ class RecentTransactionsTable extends StatelessWidget {
                           style: const TextStyle(color: BatKittyTheme.textSubtle, fontSize: 11),
                         ),
                       ),
-                      // Kolom Status Badge
                       Expanded(
                         flex: 2,
                         child: Align(

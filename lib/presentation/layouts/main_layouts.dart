@@ -19,7 +19,6 @@ class MainLayout extends StatelessWidget {
       backgroundColor: BatKittyTheme.bgDark,
       body: Row(
         children: [
-          // Sidebar Navigasi Kiri
           Container(
             width: 265,
             decoration: const BoxDecoration(
@@ -29,7 +28,6 @@ class MainLayout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo & Branding Brand
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
                   child: Row(
@@ -89,7 +87,6 @@ class MainLayout extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Daftar Menu Navigasi (Core Modules)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -110,8 +107,7 @@ class MainLayout extends StatelessWidget {
                       _buildNavItem(context, 'dashboard', 'Home / Dashboard', Icons.grid_view_rounded),
                       _buildNavItem(context, 'menu', 'Menu Management', Icons.restaurant_menu_rounded),
                       _buildNavItem(context, 'cashier', 'Kasir & Pesanan', Icons.point_of_sale_rounded),
-                      _buildNavItem(context, 'orders', 'Approval PO (Verifikasi)', Icons.fact_check_outlined), 
-                      _buildNavItem(context, 'routes', 'Manifes Kurir', Icons.local_shipping_outlined),
+                      _buildNavItem(context, 'orders', 'Order', Icons.fact_check_outlined), 
                       _buildNavItem(context, 'finance', 'Keuangan & Omzet', Icons.account_balance_wallet_outlined),
                     ],
                   ),
@@ -119,7 +115,6 @@ class MainLayout extends StatelessWidget {
                 
                 const Spacer(),
                 
-                // Indikator Status Node di Bagian Bawah Sidebar
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Container(
@@ -160,11 +155,9 @@ class MainLayout extends StatelessWidget {
             ),
           ),
 
-          // Area Konten Utama Kanan
           Expanded(
             child: Column(
               children: [
-                // Top App Bar / Header Kanan
                 Container(
                   height: 72,
                   padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -212,7 +205,6 @@ class MainLayout extends StatelessWidget {
                   ),
                 ),
 
-                // Body Konten Halaman Aktif
                 Expanded(
                   child: child,
                 ),

@@ -3,9 +3,9 @@ import '../../../core/constants/theme.dart';
 
 class CashierCustomerCard extends StatelessWidget {
   final TextEditingController phoneController;
-  final TextEditingController nameController; // Controller tambahan untuk nama baru
+  final TextEditingController nameController;  
   final bool isCustomerFound;
-  final bool isNewCustomer; // Status apakah pelanggan baru
+  final bool isNewCustomer; 
   final String customerName;
   final int pastCompletedOrders;
   final bool loyaltyActive;
