@@ -110,6 +110,7 @@ class MainLayout extends StatelessWidget {
                       _buildNavItem(context, 'dashboard', 'Home / Dashboard', Icons.grid_view_rounded),
                       _buildNavItem(context, 'menu', 'Menu Management', Icons.restaurant_menu_rounded),
                       _buildNavItem(context, 'cashier', 'Kasir & Pesanan', Icons.point_of_sale_rounded),
+                      _buildNavItem(context, 'orders', 'Approval PO (Verifikasi)', Icons.fact_check_outlined), 
                       _buildNavItem(context, 'routes', 'Manifes Kurir', Icons.local_shipping_outlined),
                       _buildNavItem(context, 'finance', 'Keuangan & Omzet', Icons.account_balance_wallet_outlined),
                     ],

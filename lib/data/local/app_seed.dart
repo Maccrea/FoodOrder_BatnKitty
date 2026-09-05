@@ -1,4 +1,9 @@
 const appSeed = {
+  'roles': [
+    {'id': 1, 'name': 'admin', 'description': 'Owner & Operasional Utama'},
+    {'id': 2, 'name': 'staff_dapur', 'description': 'Fokus Masak & Update Status'},
+    {'id': 3, 'name': 'customer', 'description': 'Pembeli / Pelanggan PO'},
+  ],
   'users': [
     {
       'id': 1,
@@ -9,11 +14,21 @@ const appSeed = {
     },
     {
       'id': 2,
-      'name': 'Kasir Utama',
+      'name': 'Chef',
       'email': 'kasir@batkitty.id',
       'password': 'kasir123',
       'created_at': '2026-08-10T09:00:00Z',
     },
+    {
+      'id': 3,
+      'role_id': 3,
+      'name': 'Neo Pelanggan',
+      'email': 'customer@gmail.com',
+      'phone': '081328206080',
+      'password': 'password123',
+      'created_at': '2026-02-01T10:00:00.000',
+    },
+
   ],
   'menus': [
     {'id': 1, 'name': 'Steak + Mashed Potato', 'base_price': 30000, 'version': 'V.1', 'category': 'regular', 'is_active': true},

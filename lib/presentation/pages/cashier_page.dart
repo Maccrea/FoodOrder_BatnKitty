@@ -46,6 +46,11 @@ class _CashierPageState extends State<CashierPage> {
   );
   final TextEditingController customNotesController = TextEditingController();
 
+  // --- VARIABLE RULES & JADWAL PENGAMBILAN ---
+  DateTime? selectedTanggalPengambilan;
+  final int maxDailyQuota = 10;
+  bool isCloseOrderManual = false;
+
   @override
   void initState() {
     super.initState();
@@ -62,8 +67,8 @@ class _CashierPageState extends State<CashierPage> {
         .cast<Map<String, dynamic>>();
     selectedMenu = masterMenus.first;
     addressController.addListener(() {
-    _autoDetectArea(addressController.text);
-  });
+      _autoDetectArea(addressController.text);
+    });
   }
 
   @override
@@ -76,6 +81,52 @@ class _CashierPageState extends State<CashierPage> {
     mealsPerDayController.dispose();
     customNotesController.dispose();
     super.dispose();
+  }
+
+  // --- LOGIKA VALIDASI WAKTU 4 JAM & OPERASIONAL ---
+  bool isTimeValid(DateTime targetTime) {
+    final minimumAllowed = DateTime.now().add(const Duration(hours: 4));
+    return targetTime.isAfter(minimumAllowed);
+  }
+
+  Future<void> _pickPickupDateTime() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 7)),
+    );
+
+    if (pickedDate == null || !mounted) return;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime == null) return;
+
+    final selectedFull = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+
+    if (isTimeValid(selectedFull)) {
+      setState(() {
+        selectedTanggalPengambilan = selectedFull;
+      });
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Jadwal pengambilan/antar minimal 4 jam dari waktu saat ini!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void onPhoneChanged(String value) {
@@ -115,19 +166,20 @@ class _CashierPageState extends State<CashierPage> {
     });
   }
 
-void _autoDetectArea(String addressText) {
-  String lower = addressText.toLowerCase();
+  void _autoDetectArea(String addressText) {
+    String lower = addressText.toLowerCase();
 
-  setState(() {
-    if (lower.contains('binus') || lower.contains('madukoro') || lower.contains('the park') || lower.contains('puri') || lower.contains('krapyak')) {
-      destinationArea = 'Semarang Barat / Binus / Madukoro';
-    } else if (lower.contains('simpang lima') || lower.contains('tugu muda') || lower.contains('pemuda') || lower.contains('gajah mada') || lower.contains('kota')) {
-      destinationArea = 'Arah Kota';
-    } else {
-      destinationArea = 'Dekat (0-4 km)'; // Default terdekat (Wologito / Puspowarno dll)
-    }
-  });
-}
+    setState(() {
+      if (lower.contains('binus') || lower.contains('madukoro') || lower.contains('the park') || lower.contains('puri') || lower.contains('krapyak')) {
+        destinationArea = 'Semarang Barat / Binus / Madukoro';
+      } else if (lower.contains('simpang lima') || lower.contains('tugu muda') || lower.contains('pemuda') || lower.contains('gajah mada') || lower.contains('kota')) {
+        destinationArea = 'Arah Kota';
+      } else {
+        destinationArea = 'Dekat (0-4 km)';
+      }
+    });
+  }
+
   double get rawDeliveryFee {
     if (deliveryType == 'pickup' || distanceKm <= 0) return 0;
     return 5000;
@@ -162,10 +214,16 @@ void _autoDetectArea(String addressText) {
   double get subtotalFood => unitPrice * quantity;
   double get grandTotal => subtotalFood + finalDeliveryFee;
 
- void _createOrder() {
+  void _createOrder() {
     debugPrint('Tombol Create Order ditekan!');
-    
-    // Ambil dan buat salinan list customers yang sepenuhnya mutable
+
+    if (isCloseOrderManual) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Operasional sedang ditutup (Close Order).'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     final rawCustomers = (appSeed['customers'] as List?) ?? [];
     List<Map<String, dynamic>> customers = rawCustomers.map((cust) {
       final cMap = Map<String, dynamic>.from(cust);
@@ -173,6 +231,30 @@ void _autoDetectArea(String addressText) {
       cMap['orders'] = rawOrders.map((ord) => Map<String, dynamic>.from(ord)).toList();
       return cMap;
     }).toList();
+
+    int allOrdersCount = 0;
+    for (var c in customers) {
+      allOrdersCount += ((c['orders'] as List?)?.length ?? 0);
+    }
+
+    // Validasi kuota 10 order
+    if (allOrdersCount >= maxDailyQuota) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kuota harian sudah penuh (10 pesanan)!'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Validasi pemilihan jadwal
+    if (selectedTanggalPengambilan == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih jadwal pengambilan/antar terlebih dahulu (min. 4 jam)!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     Map<String, dynamic>? targetCustomer;
 
@@ -209,25 +291,23 @@ void _autoDetectArea(String addressText) {
       return;
     }
 
-    int allOrdersCount = 0;
-    for (var c in customers) {
-      allOrdersCount += ((c['orders'] as List?)?.length ?? 0);
-    }
     int newOrderId = allOrdersCount + 1;
-    String todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    String nowTimestamp = DateTime.now().toIso8601String();
 
     final custOrders = (targetCustomer!['orders'] as List<dynamic>).cast<Map<String, dynamic>>();
     
     final Map<String, dynamic> newOrder = {
       'id': newOrderId,
-      'tanggal_order': todayStr,
-      'tanggal_pengambilan': todayStr,
+      'tanggal_order': nowTimestamp,
+      'tanggal_pengambilan': selectedTanggalPengambilan!.toIso8601String(),
       'total_price': subtotalFood.toInt(), 
       'delivery_fee': finalDeliveryFee.toInt(),
       'delivery_type': deliveryType == 'delivery' ? 'Delivery' : 'Pickup',
       'delivery_address': deliveryType == 'delivery' ? addressController.text : null,
-      'status_bayar': 'Lunas',
-      'status_masak': 'Proses',
+      'status_pesanan': 'waiting_approve', // Sesuai ERD
+      'status_bayar': 'unpaid',            // Sesuai ERD
+      'status_masak': 'Pending',           // Sesuai ERD
+      'cancellation_reason': null,
       'items': <Map<String, dynamic>>[
         {
           'menu_name': selectedMenu?['name'] ?? 'Custom Menu',
@@ -268,7 +348,7 @@ void _autoDetectArea(String addressText) {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Pesanan Berhasil Masuk! 🎉',
+                'Pesanan Berhasil Dibuat! 🎉',
                 style: TextStyle(
                   color: BatKittyTheme.textMain,
                   fontSize: 16,
@@ -277,7 +357,7 @@ void _autoDetectArea(String addressText) {
               ),
               const SizedBox(height: 8),
               Text(
-                'Order #ORD-09$newOrderId atas nama ${targetCustomer!['name']} sudah tercatat di sistem dan masuk ke Financial Ledger.',
+                'Order #ORD-09$newOrderId atas nama ${targetCustomer!['name']} berhasil masuk antrean dengan status waiting_approve.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: BatKittyTheme.textMuted,
@@ -296,11 +376,9 @@ void _autoDetectArea(String addressText) {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   child: const Text(
-                    'Oke, Lanjutkan Kasir',
+                    'Selesai & Lanjutkan',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -315,6 +393,7 @@ void _autoDetectArea(String addressText) {
     nameController.clear();
     customNotesController.clear();
     setState(() {
+      selectedTanggalPengambilan = null;
       isCustomerFound = false;
       isNewCustomer = false;
       foundCustomerId = 0;
@@ -322,6 +401,7 @@ void _autoDetectArea(String addressText) {
       pastCompletedOrders = 0;
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -354,10 +434,7 @@ void _autoDetectArea(String addressText) {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 9,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
                 decoration: BoxDecoration(
                   color: BatKittyTheme.surfaceDark,
                   borderRadius: BorderRadius.circular(10),
@@ -365,11 +442,7 @@ void _autoDetectArea(String addressText) {
                 ),
                 child: const Row(
                   children: [
-                    Icon(
-                      Icons.receipt_long_rounded,
-                      size: 15,
-                      color: BatKittyTheme.textMuted,
-                    ),
+                    Icon(Icons.receipt_long_rounded, size: 15, color: BatKittyTheme.textMuted),
                     SizedBox(width: 8),
                     Text(
                       'POS Terminal',
@@ -410,12 +483,58 @@ void _autoDetectArea(String addressText) {
                       addressController: addressController,
                       finalDeliveryFee: finalDeliveryFee,
                       loyaltyActive: loyaltyActive,
-                      onDeliveryChanged: (value) =>
-                          setState(() => deliveryType = value),
-                      onAreaChanged: (value) =>
-                          setState(() => destinationArea = value),
-                      onClassStatusChanged: (value) =>
-                          setState(() => hasClassToday = value ?? true),
+                      onDeliveryChanged: (value) => setState(() => deliveryType = value),
+                      onAreaChanged: (value) => setState(() => destinationArea = value),
+                      onClassStatusChanged: (value) => setState(() => hasClassToday = value ?? true),
+                    ),
+                    const SizedBox(height: 16),
+                    // Widget Tambahan: Pemilih Jadwal Pengambilan (Aturan 4 Jam)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: BatKittyTheme.surfaceDark,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: BatKittyTheme.borderSubtle),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Jadwal Pengambilan / Kirim',
+                                style: TextStyle(
+                                  color: BatKittyTheme.textMain,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                selectedTanggalPengambilan == null
+                                    ? 'Wajib dipilih (Min. 4 jam dari sekarang)'
+                                    : selectedTanggalPengambilan.toString().substring(0, 16),
+                                style: TextStyle(
+                                  color: selectedTanggalPengambilan == null
+                                      ? Colors.orangeAccent
+                                      : Colors.greenAccent,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: BatKittyTheme.surfaceHighlight,
+                              foregroundColor: BatKittyTheme.textMain,
+                            ),
+                            onPressed: _pickPickupDateTime,
+                            icon: const Icon(Icons.access_time_rounded, size: 16),
+                            label: const Text('Pilih Jadwal', style: TextStyle(fontSize: 11)),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     CashierMenuCard(
@@ -432,8 +551,7 @@ void _autoDetectArea(String addressText) {
                         selectedMenu = value;
                         isCustom = value?['is_custom'] ?? false;
                       }),
-                      onQuantityChanged: (value) =>
-                          setState(() => quantity = value),
+                      onQuantityChanged: (value) => setState(() => quantity = value),
                     ),
                   ],
                 ),
