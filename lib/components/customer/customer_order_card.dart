@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/theme.dart';
+import '../../../logic/customer/customer_catalog_bloc.dart';
+import 'midtrans_qris_dialog.dart';
 
 class CustomerOrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
@@ -91,7 +94,10 @@ class CustomerOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final int orderId = order['id'] ?? 0;
     final status = order['status_pesanan'] ?? 'waiting_approve';
+    final statusBayar = (order['status_bayar'] ?? 'unpaid').toString().toLowerCase();
+    final bool isPaid = statusBayar == 'lunas' || statusBayar == 'paid';
     final isCancelled = status == 'cancelled';
     final color = _statusColor(status);
     final isDelivery = order['delivery_type'] == 'Delivery';
@@ -114,15 +120,39 @@ class CustomerOrderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '#ORD-${order['id']}',
-                      style: const TextStyle(
-                        color: BatKittyTheme.textMuted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          '#ORD-$orderId',
+                          style: const TextStyle(
+                            color: BatKittyTheme.textMuted,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Badge Status Pembayaran
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (isPaid ? Colors.greenAccent : Colors.orangeAccent).withOpacity(.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: (isPaid ? Colors.greenAccent : Colors.orangeAccent).withOpacity(.3),
+                            ),
+                          ),
+                          child: Text(
+                            isPaid ? 'LUNAS' : 'BELUM BAYAR',
+                            style: TextStyle(
+                              color: isPaid ? Colors.greenAccent : Colors.orangeAccent,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Text(
                       order['menu_name'] ?? 'Pesanan',
                       maxLines: 1,
@@ -154,6 +184,7 @@ class CustomerOrderCard extends StatelessWidget {
 
           Row(
             children: [
+              // Info Porsi & Tipe Pengantaran
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -183,6 +214,7 @@ class CustomerOrderCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
+              // Tanggal Pengambilan
               Expanded(
                 child: Row(
                   children: [
@@ -206,6 +238,7 @@ class CustomerOrderCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
+              // Status Alur Pesanan
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -230,6 +263,7 @@ class CustomerOrderCard extends StatelessWidget {
                 ),
               ),
 
+              // Tombol Batal (Jika Masih Menunggu Konfirmasi)
               if (!isCancelled && status == 'waiting_approve') ...[
                 const SizedBox(width: 8),
                 SizedBox(
@@ -243,6 +277,39 @@ class CustomerOrderCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: const Text('Batal', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+
+              // Tombol Bayar QRIS (Jika Dikonfirmasi & Belum Lunas)
+              if (status == 'approved' && !isPaid) ...[
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 26,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      MidtransQrisDialog.show(
+                        context,
+                        order: order,
+                        onPaymentSuccess: () {
+                          context.read<CustomerCatalogBloc>().add(
+                                MarkOrderPaidEvent(
+                                  orderId: orderId,
+                                  transactionId: 'TRX-SIMULATED-$orderId',
+                                ),
+                              );
+                        },
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: BatKittyTheme.hotPink,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.qr_code_2_rounded, size: 13),
+                    label: const Text('Bayar QRIS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
                   ),
                 ),
               ],

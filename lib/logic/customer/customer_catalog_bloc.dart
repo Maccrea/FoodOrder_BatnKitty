@@ -9,6 +9,12 @@ class LoadCustomerCatalogEvent extends CustomerCatalogEvent {
   LoadCustomerCatalogEvent(this.userPhone);
 }
 
+class MarkOrderPaidEvent extends CustomerCatalogEvent {
+  final int orderId;
+  final String transactionId;
+  MarkOrderPaidEvent({required this.orderId, required this.transactionId});
+}
+
 class CreateCustomerOrderEvent extends CustomerCatalogEvent {
   final Map<String, dynamic> order;
   final String userPhone;
@@ -30,8 +36,32 @@ class CustomerCatalogBloc extends Bloc<CustomerCatalogEvent, CustomerCatalogStat
     on<LoadCustomerCatalogEvent>(_onLoadCatalog);
     on<CreateCustomerOrderEvent>(_onCreateOrder);
     on<CancelCustomerOrderEvent>(_onCancelOrder);
+    on<MarkOrderPaidEvent>(_onMarkOrderPaid);
   }
 
+void _onMarkOrderPaid(
+  MarkOrderPaidEvent event,
+  Emitter<CustomerCatalogState> emit,
+) {
+  final updatedOrders = state.myOrders.map((o) {
+    if (o['id'] == event.orderId) {
+      final updated = Map<String, dynamic>.from(o);
+      updated['status_bayar'] = 'Lunas';
+      updated['payment_info'] = {
+        'transaction_id': event.transactionId,
+        'paid_at': DateTime.now().toIso8601String(),
+        'method': 'QRIS Midtrans',
+      };
+      return updated;
+    }
+    return o;
+  }).toList();
+
+  emit(state.copyWith(
+    myOrders: updatedOrders,
+    message: 'Pembayaran QRIS berhasil! Pesanan siap diproses dapur.',
+  ));
+}
   void _onLoadCatalog(LoadCustomerCatalogEvent event, Emitter<CustomerCatalogState> emit) {
     final rawMenus = (appSeed['menus'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final active = rawMenus.where((m) => m['is_active'] == true).toList();
