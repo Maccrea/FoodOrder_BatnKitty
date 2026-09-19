@@ -5,7 +5,6 @@
 // // gestures. You can also use WidgetTester to find child widgets in the widget
 // // tree, read text, and verify that the values of widget properties are correct.
 
-// import 'package:flutter/material.dart';
 // import 'package:flutter_test/flutter_test.dart';
 
 // import 'package:batnkitty_food/main.dart';
@@ -28,3 +27,24 @@
 //     expect(find.text('1'), findsOneWidget);
 //   });
 // }
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:batnkitty_food/logic/customer/customer_catalog_bloc.dart';
+import 'package:batnkitty_food/presentation/pages/customer/customer_home_dashboard.dart';
+
+void main() {
+	testWidgets('customer dashboard renders', (tester) async {
+		await tester.pumpWidget(
+			BlocProvider(
+				create: (_) => CustomerCatalogBloc(),
+				child: const MaterialApp(home: CustomerHomeDashboard()),
+			),
+		);
+		await tester.pump();
+
+		expect(find.text('Lapar?'), findsOneWidget);
+		expect(find.text('Lihat Menu'), findsOneWidget);
+	});
+}

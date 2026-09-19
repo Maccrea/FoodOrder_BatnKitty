@@ -1,3 +1,6 @@
+import 'package:batnkitty_food/core/network/api_client.dart';
+import 'package:batnkitty_food/data/services/order_api_services.dart';
+import 'package:dio/src/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../logic/admin/admin_bloc.dart';
@@ -22,7 +25,9 @@ class _AdminShellPageState extends State<AdminShellPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => AdminBloc()..add(LoadAdminDataEvent()),
+      create: (context) => AdminBloc(
+    orderApiService: OrderApiService(), 
+  )..add(LoadAdminDataEvent()),
       child: MainLayout(
         activePage: activePage,
         onNavigate: (page) => setState(() => activePage = page),

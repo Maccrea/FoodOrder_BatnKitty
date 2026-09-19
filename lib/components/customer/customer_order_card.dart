@@ -131,7 +131,6 @@ class CustomerOrderCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Badge Status Pembayaran
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
@@ -184,7 +183,6 @@ class CustomerOrderCard extends StatelessWidget {
 
           Row(
             children: [
-              // Info Porsi & Tipe Pengantaran
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -214,7 +212,6 @@ class CustomerOrderCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              // Tanggal Pengambilan
               Expanded(
                 child: Row(
                   children: [
@@ -238,7 +235,6 @@ class CustomerOrderCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              // Status Alur Pesanan
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -263,7 +259,6 @@ class CustomerOrderCard extends StatelessWidget {
                 ),
               ),
 
-              // Tombol Batal (Jika Masih Menunggu Konfirmasi)
               if (!isCancelled && status == 'waiting_approve') ...[
                 const SizedBox(width: 8),
                 SizedBox(
@@ -281,7 +276,6 @@ class CustomerOrderCard extends StatelessWidget {
                 ),
               ],
 
-              // Tombol Bayar QRIS (Jika Dikonfirmasi & Belum Lunas)
               if (status == 'approved' && !isPaid) ...[
                 const SizedBox(width: 8),
                 SizedBox(

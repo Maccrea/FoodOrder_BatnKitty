@@ -253,217 +253,233 @@ class AdminOrderPage extends StatelessWidget {
     );
   }
 
-  Widget _buildUnifiedOrderInspector(BuildContext context, Map<String, dynamic> item) {
-    final int id = item['id'] ?? 0;
-    final status = item['status_pesanan'] ?? 'processing';
-    final isWaiting = status == 'waiting_approve';
-    final isProcessing = status == 'processing';
-    final isDelivering = status == 'delivering';
-    final isCompleted = status == 'completed';
-    final isDelivery = item['delivery_type'] == 'Delivery';
-    final notes = (item['custom_notes'] ?? '').toString();
-    final address = item['delivery_address'] ?? 'Semarang';
-    final menuName = item['menu_name'] ?? 'Menu PO';
-    final qty = item['quantity'] ?? 1;
+Future<void> _updateOrderStatusAPI(
+  BuildContext context, 
+  int orderId, 
+  String targetStatus, {
+  String? reason,
+}) async {
+  context.read<AdminBloc>().add(
+    UpdateAdminOrderStatusEvent(
+      orderId: orderId,
+      newStatus: targetStatus,
+      reason: reason,
+    ),
+  );
+}
+Widget _buildUnifiedOrderInspector(BuildContext context, Map<String, dynamic> item) {
+  final int id = item['id'] ?? 0;
+  final status = item['status_pesanan'] ?? 'processing';
+  final isWaiting = status == 'waiting_approve';
+  final isProcessing = status == 'processing';
+  final isDelivering = status == 'delivering';
+  final isCompleted = status == 'completed';
+  final isDelivery = item['delivery_type'] == 'Delivery';
+  final notes = (item['custom_notes'] ?? '').toString();
+  final address = item['delivery_address'] ?? 'Semarang';
+  final menuName = item['menu_name'] ?? 'Menu PO';
+  final qty = item['quantity'] ?? 1;
 
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141720),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F2433)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+  return Container(
+    padding: const EdgeInsets.all(22),
+    decoration: BoxDecoration(
+      color: const Color(0xFF141720),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color(0xFF1F2433)),
+    ),
+    child: SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Detail Pesanan #ORD-$id', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 2),
+                  Text(item['customer_name'] ?? 'Pelanggan', style: TextStyle(color: Colors.white.withOpacity(.5), fontSize: 12)),
+                ],
+              ),
+              IconButton(
+                tooltip: 'Chat WhatsApp Pelanggan',
+                onPressed: () => _hubungiWA(item['customer_phone'] ?? '', item['customer_name'] ?? '', id),
+                icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.greenAccent, size: 18),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Color(0xFF1F2433), height: 1),
+          const SizedBox(height: 16),
+
+          if (notes.isNotEmpty) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.withOpacity(.25)),
+              ),
+              child: Text('Instruksi Dapur: "$notes"', style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          _buildInspectorRow('Menu Dipesan', '$menuName ($qty Porsi)'),
+          _buildInspectorRow('Jadwal Antar/Ambil', item['tanggal_pengambilan'] ?? '-'),
+          _buildInspectorRow('Metode Pemenuhan', item['delivery_type'] ?? '-'),
+          _buildInspectorRow('Status Pembayaran', (item['status_bayar'] ?? 'Lunas').toUpperCase()),
+          _buildInspectorRow('Total Tagihan', formatRupiah(((item['total_price'] as num?) ?? 0).toInt())),
+
+          if (isDelivery) ...[
+            const SizedBox(height: 10),
+            InkWell(
+              onTap: () => _openGoogleMaps(address),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFF1A1F2C), borderRadius: BorderRadius.circular(8)),
+                child: Row(
                   children: [
-                    Text('Detail Pesanan #ORD-$id', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 2),
-                    Text(item['customer_name'] ?? 'Pelanggan', style: TextStyle(color: Colors.white.withOpacity(.5), fontSize: 12)),
+                    const Icon(Icons.location_on_outlined, size: 14, color: BatKittyTheme.hotPink),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(address, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 11)),
+                    ),
+                    const Icon(Icons.open_in_new_rounded, size: 12, color: Colors.white54),
                   ],
                 ),
-                IconButton(
-                  tooltip: 'Chat WhatsApp Pelanggan',
-                  onPressed: () => _hubungiWA(item['customer_phone'] ?? '', item['customer_name'] ?? '', id),
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.greenAccent, size: 18),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          if (isWaiting) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      _updateOrderStatusAPI(context, id, 'cancelled', reason: 'Ditolak admin');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      side: BorderSide(color: Colors.redAccent.withOpacity(.4)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Tolak', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _updateOrderStatusAPI(context, id, 'approved');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: BatKittyTheme.hotPink,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Setujui Pesanan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            const Divider(color: Color(0xFF1F2433), height: 1),
-            const SizedBox(height: 16),
-
-            if (notes.isNotEmpty) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(.1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.amber.withOpacity(.25)),
-                ),
-                child: Text('Instruksi Dapur: "$notes"', style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            _buildInspectorRow('Menu Dipesan', '$menuName ($qty Porsi)'),
-            _buildInspectorRow('Jadwal Antar/Ambil', item['tanggal_pengambilan'] ?? '-'),
-            _buildInspectorRow('Metode Pemenuhan', item['delivery_type'] ?? '-'),
-            _buildInspectorRow('Status Pembayaran', (item['status_bayar'] ?? 'Lunas').toUpperCase()),
-            _buildInspectorRow('Total Tagihan', formatRupiah(((item['total_price'] as num?) ?? 0).toInt())),
-
-            if (isDelivery) ...[
-              const SizedBox(height: 10),
-              InkWell(
-                onTap: () => _openGoogleMaps(address),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: const Color(0xFF1A1F2C), borderRadius: BorderRadius.circular(8)),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: BatKittyTheme.hotPink),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(address, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 11)),
-                      ),
-                      const Icon(Icons.open_in_new_rounded, size: 12, color: Colors.white54),
-                    ],
-                  ),
+          ] else if (isProcessing && isDelivery) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _updateOrderStatusAPI(context, id, 'delivering');
+                },
+                icon: const Icon(Icons.two_wheeler_rounded, size: 16),
+                label: const Text('Kurir Berangkat Antar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
-            ],
-
-            const SizedBox(height: 24),
-
-            if (isWaiting) ...[
-              Row(
+            ),
+          ] else if (isDelivering) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _updateOrderStatusAPI(context, id, 'completed', );
+                },
+                icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                label: const Text('Tandai Sampai / Selesai'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          ] else if (isProcessing && !isDelivery) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _updateOrderStatusAPI(context, id, 'completed', );
+                },
+                icon: const Icon(Icons.storefront_outlined, size: 16),
+                label: const Text('Tandai Telah Diambil'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          ] else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: Colors.green.withOpacity(.1), borderRadius: BorderRadius.circular(8)),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        context.read<AdminBloc>().add(UpdateAdminOrderStatusEvent(orderId: id, newStatus: 'cancelled', reason: 'Ditolak admin'));
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.redAccent,
-                        side: BorderSide(color: Colors.redAccent.withOpacity(.4)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('Tolak', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        context.read<AdminBloc>().add(UpdateAdminOrderStatusEvent(orderId: id, newStatus: 'approved'));
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: BatKittyTheme.hotPink,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('Setujui Pesanan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
+                  Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 16),
+                  SizedBox(width: 8),
+                  Text(
+                    'PESANAN TELAH SELESAI',
+                    style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w800),
                   ),
                 ],
               ),
-            ] else if (isProcessing && isDelivery) ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<AdminBloc>().add(UpdateDeliveryStatusEvent(orderId: id, nextStatus: 'Delivering'));
-                  },
-                  icon: const Icon(Icons.two_wheeler_rounded, size: 16),
-                  label: const Text('Kurir Berangkat Antar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ),
-            ] else if (isDelivering) ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<AdminBloc>().add(UpdateDeliveryStatusEvent(orderId: id, nextStatus: 'Delivered'));
-                  },
-                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                  label: const Text('Tandai Sampai / Selesai'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ),
-            ] else if (isProcessing && !isDelivery) ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<AdminBloc>().add(UpdateDeliveryStatusEvent(orderId: id, nextStatus: 'Delivered'));
-                  },
-                  icon: const Icon(Icons.storefront_outlined, size: 16),
-                  label: const Text('Tandai Telah Diambil'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ),
-            ] else ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: Colors.green.withOpacity(.1), borderRadius: BorderRadius.circular(8)),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'PESANAN TELAH SELESAI',
-                      style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w800),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInspectorRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(.4), fontSize: 11.5)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+Widget _buildInspectorRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(.4), fontSize: 11.5)),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+      ],
+    ),
+  );
+}
+
+  
 }

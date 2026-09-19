@@ -13,13 +13,11 @@ class MockMidtransPaymentRepository implements PaymentRepository {
     required int orderId,
     required num amount,
   }) async {
-    // Simulasi latency network API
     await Future.delayed(const Duration(milliseconds: 600));
 
     final fee = (amount * 0.007).round(); // MDR QRIS 0.7%
     final transactionId = 'TRX-BATKITTY-$orderId-${DateTime.now().millisecondsSinceEpoch}';
 
-    // Payload standar format QRIS Midtrans Core API
     return {
       'transaction_id': transactionId,
       'order_id': orderId,
@@ -34,7 +32,6 @@ class MockMidtransPaymentRepository implements PaymentRepository {
   @override
   Future<String> checkPaymentStatus(String transactionId) async {
     await Future.delayed(const Duration(seconds: 1));
-    // Simulasi webhook berhasil
     return 'success';
   }
 }

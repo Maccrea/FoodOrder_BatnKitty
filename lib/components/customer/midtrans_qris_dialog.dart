@@ -35,7 +35,7 @@ class MidtransQrisDialog extends StatefulWidget {
 
 class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
   late Timer _timer;
-  int _secondsRemaining = 15 * 60; // 15 Menit batas bayar QRIS
+  int _secondsRemaining = 15 * 60;
   bool _isChecking = false;
 
   @override
@@ -95,7 +95,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
   Widget build(BuildContext context) {
     final int orderId = widget.order['id'] ?? 0;
     final num totalBill = widget.order['total_price'] ?? 0;
-    // Skema Fee QRIS Midtrans 0.7%
     final num fee = (totalBill * 0.007).round();
     final String qrisPayload = '00020101021226680016ID.MIDTRANS.WWW0118936009110000000000520458125802ID5913BATKITTY_FOOD6008SEMARANG62070703A016304';
 
@@ -112,7 +111,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header Dialog
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -151,7 +149,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
 
             const SizedBox(height: 18),
 
-            // Banner Countdown Timer
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -174,7 +171,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
 
             const SizedBox(height: 20),
 
-            // Container Barcode QRIS
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -190,7 +186,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
               ),
               child: Column(
                 children: [
-                  // Logo Banner QRIS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -203,7 +198,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // QR Image Generator
                   QrImageView(
                     data: qrisPayload,
                     version: QrVersions.auto,
@@ -221,7 +215,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
 
             const SizedBox(height: 20),
 
-            // Rincian Pembayaran
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -251,7 +244,6 @@ class _MidtransQrisDialogState extends State<MidtransQrisDialog> {
 
             const SizedBox(height: 20),
 
-            // Tombol Cek Bayar
             SizedBox(
               width: double.infinity,
               height: 44,

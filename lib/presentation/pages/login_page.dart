@@ -1,44 +1,46 @@
+import 'package:batnkitty_food/core/network/api_client.dart';
+import 'package:batnkitty_food/core/network/api_service.dart';
+import 'package:batnkitty_food/data/model/customer_model.dart';
 import 'package:flutter/material.dart';
+
 import '../../core/constants/theme.dart';
 import '../../data/local/app_seed.dart';
 import '../../data/model/user_model.dart';
 import 'admin/admin_shell_page.dart';
 import 'customer/customer_catalog_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class LoginPage extends StatelessWidget {
+  LoginPage({super.key});
 
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  String? errorMessage;
+  final ValueNotifier<bool> _obscurePassword = ValueNotifier<bool>(true);
+  final ValueNotifier<String?> _errorMessage = ValueNotifier<String?>(null);
 
-  void _handleLogin() {
+  Future<void> _handleLogin(BuildContext context) async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      setState(() => errorMessage = 'Email dan password tidak boleh kosong!');
+      _errorMessage.value = 'Silakan isi email dan password.';
       return;
     }
 
     final rawUsers = (appSeed['users'] as List).cast<Map<String, dynamic>>();
     final matched = rawUsers.firstWhere(
-      (u) => u['email'] == email && u['password'] == password,
+      (user) => user['email'] == email && user['password'] == password,
       orElse: () => {},
     );
 
     if (matched.isEmpty) {
-      setState(() => errorMessage = 'Kombinasi email atau password salah!');
+      _errorMessage.value = 'Email atau password tidak sesuai.';
       return;
     }
 
+    _errorMessage.value = null;
     final user = User.fromMap(matched);
+
+    if (!context.mounted) return;
 
     if (user.isAdmin || user.isStaffDapur) {
       Navigator.pushReplacement(
@@ -46,6 +48,31 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const AdminShellPage()),
       );
     } else if (user.isCustomer) {
+      try {
+        final apiService = ApiService(ApiClient().dio);
+        final request = CustomerRequest(
+          name: matched['name'] ?? 'Pelanggan',
+          phone: matched['phone'] ?? '0800000000',
+        );
+
+        final response = await apiService.registerCustomer(request);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final responseData = response.data is Map<String, dynamic>
+              ? response.data as Map<String, dynamic>
+              : <String, dynamic>{};
+          final customerData = responseData['data'] is Map<String, dynamic>
+              ? responseData['data'] as Map<String, dynamic>
+              : responseData;
+          if (customerData['id'] != null) {
+            matched['id'] = int.tryParse(customerData['id'].toString());
+          }
+        }
+      } catch (e) {
+        debugPrint('Gagal sinkronisasi data customer ke server: $e');
+      }
+
+      if (!context.mounted) return;
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => CustomerCatalogPage(user: matched)),
@@ -53,378 +80,40 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _quickLogin(int roleId) {
+  void _quickLogin(int roleId, BuildContext context) {
     final rawUsers = (appSeed['users'] as List).cast<Map<String, dynamic>>();
-    final target = rawUsers.firstWhere((u) => u['role_id'] == roleId);
-    setState(() {
-      emailController.text = target['email'];
-      passwordController.text = target['password'];
-      errorMessage = null;
-    });
-    _handleLogin();
+    final target = rawUsers.firstWhere((user) => user['role_id'] == roleId);
+
+    emailController.text = target['email'];
+    passwordController.text = target['password'];
+    _errorMessage.value = null;
+
+    _handleLogin(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 900;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
+      backgroundColor: const Color(0xFF0B0C10),
       body: Stack(
         children: [
-          Positioned(
-            top: -120,
-            left: -100,
-            child: Container(
-              width: 450,
-              height: 450,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    BatKittyTheme.hotPink.withOpacity(0.18),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -150,
-            right: -100,
-            child: Container(
-              width: 500,
-              height: 500,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF6366F1).withOpacity(0.14),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 1080, minHeight: 620),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF11141D),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: const Color(0xFF22283A)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.6),
-                      blurRadius: 40,
-                      offset: const Offset(0, 20),
+          _buildBackground(),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth >= 900;
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1080),
+                      child: isDesktop
+                          ? _buildDesktopLayout(context)
+                          : _buildMobileLayout(context),
                     ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 5,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [BatKittyTheme.hotPink, BatKittyTheme.pinkMuted],
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Text("🦇", style: TextStyle(fontSize: 16)),
-                                ),
-                                const SizedBox(width: 10),
-                                const Text(
-                                  "BATKITTY OS",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.6,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-
-                            const Text(
-                              "Welcome Back",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              "Masuk untuk kelola operasional katering atau buat pesanan PO.",
-                              style: TextStyle(color: Color(0xFF8E95A9), fontSize: 12.5),
-                            ),
-                            const SizedBox(height: 28),
-
-                            if (errorMessage != null) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.info_outline, color: Colors.redAccent, size: 16),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        errorMessage!,
-                                        style: const TextStyle(color: Colors.redAccent, fontSize: 11.5),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                            ],
-
-                            const Text(
-                              "EMAIL ADDRESS",
-                              style: TextStyle(
-                                color: Color(0xFF6B7280),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            TextField(
-                              controller: emailController,
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                              decoration: InputDecoration(
-                                hintText: "admin@batkitty.com",
-                                hintStyle: const TextStyle(color: Color(0xFF4B5563), fontSize: 13),
-                                prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFF6B7280), size: 18),
-                                filled: true,
-                                fillColor: const Color(0xFF171B26),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0xFF262D40)),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: BatKittyTheme.hotPink, width: 1.5),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-
-                            const Text(
-                              "PASSWORD",
-                              style: TextStyle(
-                                color: Color(0xFF6B7280),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            TextField(
-                              controller: passwordController,
-                              obscureText: _obscurePassword,
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                              decoration: InputDecoration(
-                                hintText: "••••••••",
-                                hintStyle: const TextStyle(color: Color(0xFF4B5563), fontSize: 13),
-                                prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF6B7280), size: 18),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                    color: const Color(0xFF6B7280),
-                                    size: 18,
-                                  ),
-                                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                                ),
-                                filled: true,
-                                fillColor: const Color(0xFF171B26),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0xFF262D40)),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: BatKittyTheme.hotPink, width: 1.5),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _handleLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: BatKittyTheme.hotPink,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: const Text(
-                                  "Sign In to Portal",
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-
-                            const Row(
-                              children: [
-                                Expanded(child: Divider(color: Color(0xFF262D40))),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 10),
-                                  child: Text(
-                                    "DEV QUICK SWITCH",
-                                    style: TextStyle(
-                                      color: Color(0xFF6B7280),
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(child: Divider(color: Color(0xFF262D40))),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(child: _buildRoleButton("Admin", Icons.admin_panel_settings_outlined, () => _quickLogin(1))),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildRoleButton("Dapur", Icons.outdoor_grill_outlined, () => _quickLogin(2))),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildRoleButton("Customer", Icons.person_outline_rounded, () => _quickLogin(3))),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    if (isDesktop)
-                      Expanded(
-                        flex: 6,
-                        child: Container(
-                          height: 620,
-                          margin: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF161B28), Color(0xFF0F121C)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: const Color(0xFF262D42)),
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: 40,
-                                right: 40,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF20273A),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: const Color(0xFF333E59)),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CircleAvatar(radius: 4, backgroundColor: Colors.greenAccent),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        "Kitchen Ready // Semarang Hub",
-                                        style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(48),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: BatKittyTheme.hotPink.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Text(
-                                        "CATERING & DIET SYSTEM",
-                                        style: TextStyle(
-                                          color: BatKittyTheme.hotPink,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 1.5,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 18),
-                                    const Text(
-                                      "Pesan PO Sehat &\nMenu Harian.",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.w900,
-                                        height: 1.15,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    const Text(
-                                      "Platform katering harian BatKitty. Bikin pesanan PO mudah untuk 1–2 hari ke depan, pantau slot kuota dapur, dan kelola menu sehat dalam satu pintu.",
-                                      style: TextStyle(color: Color(0xFF8E95A9), fontSize: 13, height: 1.5),
-                                    ),
-                                    const SizedBox(height: 32),
-                                    Wrap(
-                                      spacing: 10,
-                                      runSpacing: 10,
-                                      children: [
-                                        _buildFeatureBadge(Icons.calendar_month_outlined, "PO Maks. H+2 Hari"),
-                                        _buildFeatureBadge(Icons.approval_outlined, "Approval 1x24 Jam"),
-                                        _buildFeatureBadge(Icons.cancel_outlined, "Batal Maks. H-4 Jam"),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -432,45 +121,415 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildRoleButton(String label, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
-        decoration: BoxDecoration(
-          color: const Color(0xFF171B26),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFF262D40)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 16, color: BatKittyTheme.hotPink),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w600),
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Container(
+      height: 650,
+      decoration: BoxDecoration(
+        color: const Color(0xFF12141A),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF252832)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.35),
+            blurRadius: 40,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(flex: 5, child: _buildLoginSection(context)),
+          Expanded(flex: 6, child: _buildBrandSection()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF12141A),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF252832)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.30),
+            blurRadius: 30,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: _buildLoginSection(context),
+    );
+  }
+
+  Widget _buildBackground() {
+    return Stack(
+      children: [
+        Positioned(
+          top: -180,
+          left: -150,
+          child: Container(
+            width: 480,
+            height: 480,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [BatKittyTheme.hotPink.withOpacity(.10), Colors.transparent],
+              ),
             ),
+          ),
+        ),
+        Positioned(
+          bottom: -220,
+          right: -160,
+          child: Container(
+            width: 520,
+            height: 520,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [const Color(0xFF6366F1).withOpacity(.07), Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 46),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLogo(),
+          const SizedBox(height: 42),
+          const Text(
+            'Selamat Datang',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.6,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Masuk untuk melanjutkan ke BatKitty.',
+            style: TextStyle(color: Color(0xFF9297A5), fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 30),
+          ValueListenableBuilder<String?>(
+            valueListenable: _errorMessage,
+            builder: (context, error, child) {
+              if (error == null) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  _buildErrorMessage(error),
+                  const SizedBox(height: 18),
+                ],
+              );
+            },
+          ),
+          _buildFieldLabel('Email'),
+          const SizedBox(height: 7),
+          _buildTextField(
+            controller: emailController,
+            hintText: 'Masukkan email',
+            icon: Icons.mail_outline_rounded,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 18),
+          _buildFieldLabel('Password'),
+          const SizedBox(height: 7),
+          ValueListenableBuilder<bool>(
+            valueListenable: _obscurePassword,
+            builder: (context, obscure, child) {
+              return _buildTextField(
+                controller: passwordController,
+                hintText: 'Masukkan password',
+                icon: Icons.lock_outline_rounded,
+                obscureText: obscure,
+                suffixIcon: IconButton(
+                  splashRadius: 20,
+                  onPressed: () => _obscurePassword.value = !obscure,
+                  icon: Icon(
+                    obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: const Color(0xFF777D8C),
+                    size: 18,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 25),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () => _handleLogin(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: BatKittyTheme.hotPink,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Masuk', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            ),
+          ),
+          const SizedBox(height: 30),
+          _buildDevelopmentAccess(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: BatKittyTheme.hotPink.withOpacity(.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: BatKittyTheme.hotPink.withOpacity(.20)),
+          ),
+          alignment: Alignment.center,
+          child: const Text('🦇', style: TextStyle(fontSize: 17)),
+        ),
+        const SizedBox(width: 11),
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('BATKITTY', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 1.4)),
+            SizedBox(height: 2),
+            Text('Catering', style: TextStyle(color: Color(0xFF777D8C), fontSize: 9.5)),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _buildFieldLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(color: Color(0xFFB4B8C3), fontSize: 11, fontWeight: FontWeight.w600),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType? keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      style: const TextStyle(color: Colors.white, fontSize: 13),
+      cursorColor: BatKittyTheme.hotPink,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFF555B69), fontSize: 12.5),
+        prefixIcon: Icon(icon, color: const Color(0xFF777D8C), size: 18),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: const Color(0xFF181A21),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF292C35))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF292C35))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: BatKittyTheme.hotPink, width: 1.2)),
+      ),
+    );
+  }
+
+  Widget _buildErrorMessage(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withOpacity(.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.redAccent.withOpacity(.20)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 17),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Color(0xFFE88A8A), fontSize: 11.5, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevelopmentAccess(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Expanded(child: Divider(color: Color(0xFF292C35))),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                'DEVELOPMENT ACCESS',
+                style: TextStyle(color: Color(0xFF606674), fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 1),
+              ),
+            ),
+            const Expanded(child: Divider(color: Color(0xFF292C35))),
+          ],
+        ),
+        const SizedBox(height: 13),
+        Row(
+          children: [
+            Expanded(child: _buildRoleButton('Admin', Icons.admin_panel_settings_outlined, () => _quickLogin(1, context))),
+            const SizedBox(width: 7),
+            Expanded(child: _buildRoleButton('Dapur', Icons.restaurant_outlined, () => _quickLogin(2, context))),
+            const SizedBox(width: 7),
+            Expanded(child: _buildRoleButton('Customer', Icons.person_outline_rounded, () => _quickLogin(3, context))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleButton(String label, IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF181A21),
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: const Color(0xFF292C35)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 16, color: BatKittyTheme.hotPink),
+              const SizedBox(height: 5),
+              Text(label, style: const TextStyle(color: Color(0xFFB9BDC7), fontSize: 10, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrandSection() {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171920),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: const Color(0xFF282B34)),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -70,
+            top: -70,
+            child: Container(
+              width: 230,
+              height: 230,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: BatKittyTheme.hotPink.withOpacity(.055)),
+            ),
+          ),
+          Positioned(
+            left: -90,
+            bottom: -100,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF6366F1).withOpacity(.045)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(48),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: BatKittyTheme.hotPink.withOpacity(.09),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: const Text(
+                    'BATKITTY CATERING',
+                    style: TextStyle(color: BatKittyTheme.hotPink, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Makanan harian,\ndipesan lebih mudah.',
+                  style: TextStyle(color: Colors.white, fontSize: 34, height: 1.12, fontWeight: FontWeight.w800, letterSpacing: -.8),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Pesan menu harian dan katering sesuai kebutuhan. Pilih jadwal, tentukan metode pengambilan, dan pantau pesanan kamu dalam satu tempat.',
+                  style: TextStyle(color: Color(0xFF9297A5), fontSize: 12.5, height: 1.6),
+                ),
+                const SizedBox(height: 30),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildFeatureBadge(Icons.calendar_today_outlined, 'PO H+2'),
+                    _buildFeatureBadge(Icons.check_circle_outline, 'Approval 1×24 Jam'),
+                    _buildFeatureBadge(Icons.schedule_outlined, 'Pembatalan H-4'),
+                  ],
+                ),
+                const SizedBox(height: 36),
+                Container(width: double.infinity, height: 1, color: const Color(0xFF282B34)),
+                const SizedBox(height: 16),
+                const Row(
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF777D8C)),
+                    SizedBox(width: 7),
+                    Text('Semarang', style: TextStyle(color: Color(0xFF777D8C), fontSize: 10)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFeatureBadge(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C2233),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF2C3650)),
+        color: const Color(0xFF1C1F27),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF2A2E38)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.pinkAccent),
-          const SizedBox(width: 8),
-          Text(text, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+          Icon(icon, size: 13, color: BatKittyTheme.hotPink),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Color(0xFFB9BDC7), fontSize: 9.5, fontWeight: FontWeight.w600)),
         ],
       ),
     );

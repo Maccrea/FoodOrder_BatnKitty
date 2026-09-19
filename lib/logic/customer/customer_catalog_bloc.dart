@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/services/order_api_services.dart';
 import '../../data/local/app_seed.dart';
 import 'customer_catalog_state.dart';
 
@@ -6,8 +9,11 @@ abstract class CustomerCatalogEvent {}
 
 class LoadCustomerCatalogEvent extends CustomerCatalogEvent {
   final String userPhone;
-  LoadCustomerCatalogEvent(this.userPhone);
+  final int? customerId;
+  LoadCustomerCatalogEvent(this.userPhone, {this.customerId});
 }
+
+class RefreshCustomerOrdersEvent extends CustomerCatalogEvent {}
 
 class MarkOrderPaidEvent extends CustomerCatalogEvent {
   final int orderId;
@@ -32,8 +38,16 @@ class CancelCustomerOrderEvent extends CustomerCatalogEvent {
 }
 
 class CustomerCatalogBloc extends Bloc<CustomerCatalogEvent, CustomerCatalogState> {
-  CustomerCatalogBloc() : super(const CustomerCatalogState()) {
+  final OrderApiService _orderApiService;
+  Timer? _ordersPollingTimer;
+  String _userPhone = '';
+  int? _customerId;
+
+  CustomerCatalogBloc({OrderApiService? orderApiService})
+      : _orderApiService = orderApiService ?? OrderApiService(),
+        super(const CustomerCatalogState()) {
     on<LoadCustomerCatalogEvent>(_onLoadCatalog);
+    on<RefreshCustomerOrdersEvent>(_onRefreshOrders);
     on<CreateCustomerOrderEvent>(_onCreateOrder);
     on<CancelCustomerOrderEvent>(_onCancelOrder);
     on<MarkOrderPaidEvent>(_onMarkOrderPaid);
@@ -62,22 +76,60 @@ void _onMarkOrderPaid(
     message: 'Pembayaran QRIS berhasil! Pesanan siap diproses dapur.',
   ));
 }
-  void _onLoadCatalog(LoadCustomerCatalogEvent event, Emitter<CustomerCatalogState> emit) {
-    final rawMenus = (appSeed['menus'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final active = rawMenus.where((m) => m['is_active'] == true).toList();
+  Future<void> _onLoadCatalog(
+    LoadCustomerCatalogEvent event,
+    Emitter<CustomerCatalogState> emit,
+  ) async {
+    _userPhone = event.userPhone;
+    _customerId = event.customerId;
+    final seedMenus = (appSeed['menus'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    var active = seedMenus.where((m) => m['is_active'] == true).toList();
 
-    final customers = (appSeed['customers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final currentCustomer = customers.firstWhere(
-      (c) => c['phone'] == event.userPhone,
-      orElse: () => {'orders': <Map<String, dynamic>>[]},
-    );
+    try {
+      final apiMenus = await _orderApiService.getActiveMenus();
+      if (apiMenus.isNotEmpty) active = apiMenus;
+    } catch (_) {
+    }
 
-    final orders = (currentCustomer['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    List<Map<String, dynamic>> orders = [];
+    if (event.userPhone.isNotEmpty || event.customerId != null) {
+      try {
+        orders = await _orderApiService.getCustomerOrders(
+          customerId: event.customerId,
+          phone: event.userPhone,
+        );
+      } catch (_) {
+        orders = [];
+      }
+    }
 
     emit(state.copyWith(
       activeMenus: active,
       myOrders: List<Map<String, dynamic>>.from(orders),
     ));
+
+    if (_userPhone.isNotEmpty || _customerId != null) {
+      _ordersPollingTimer ??= Timer.periodic(
+        const Duration(seconds: 10),
+        (_) => add(RefreshCustomerOrdersEvent()),
+      );
+    }
+  }
+
+  Future<void> _onRefreshOrders(
+    RefreshCustomerOrdersEvent event,
+    Emitter<CustomerCatalogState> emit,
+  ) async {
+    if (_userPhone.isEmpty && _customerId == null) return;
+
+    try {
+      final orders = await _orderApiService.getCustomerOrders(
+        customerId: _customerId,
+        phone: _userPhone,
+      );
+      emit(state.copyWith(myOrders: orders));
+    } catch (_) {
+    }
   }
 
   void _onCreateOrder(CreateCustomerOrderEvent event, Emitter<CustomerCatalogState> emit) {
@@ -133,5 +185,11 @@ void _onMarkOrderPaid(
       message: 'Pesanan berhasil dibatalkan.',
       isError: false,
     ));
+  }
+
+  @override
+  Future<void> close() {
+    _ordersPollingTimer?.cancel();
+    return super.close();
   }
 }

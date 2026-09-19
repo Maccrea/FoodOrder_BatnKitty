@@ -1,3 +1,4 @@
+import 'package:batnkitty_food/data/model/order_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +11,11 @@ import '/components/customer/checkout_order_sheet.dart';
 import '/components/customer/customer_menu_card.dart';
 import '/components/customer/operational_banner.dart';
 import '/components/customer/orders_history_dialog.dart';
+import '/core/network/api_client.dart';
+import '/core/network/api_endpoint.dart';
+import '/core/network/api_service.dart';
+
+
 
 class CustomerCatalogPage extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -19,7 +25,13 @@ class CustomerCatalogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => CustomerCatalogBloc()..add(LoadCustomerCatalogEvent(user['phone'] ?? '')),
+      create: (_) => CustomerCatalogBloc()
+        ..add(
+          LoadCustomerCatalogEvent(
+            user['phone'] ?? '',
+            customerId: user['id'] is int ? user['id'] as int : null,
+          ),
+        ),
       child: _CustomerCatalogView(user: user),
     );
   }
@@ -63,32 +75,75 @@ class _CustomerCatalogView extends StatelessWidget {
       );
   }
 
-  void _handleCheckout(BuildContext context, Map<String, dynamic> menu) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => CheckoutOrderSheet(
-        menu: menu,
-        userName: user['name'] ?? 'Pelanggan',
-        onConfirm: (newOrder) {
-          context.read<CustomerCatalogBloc>().add(
-                CreateCustomerOrderEvent(
-                  order: newOrder,
-                  userPhone: user['phone'] ?? '',
-                ),
-              );
-          _hubungiAdminWA(
-            'Halo Admin BatKitty, saya ${user['name']} membuat pesanan PO:\n\n'
-            'Menu: ${menu['name']}\n'
-            'Jumlah: ${newOrder['quantity']}\n'
-            'Tipe: ${newOrder['delivery_type']}\n'
-            'Mohon konfirmasinya.',
+void _handleCheckout(BuildContext context, Map<String, dynamic> menu) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => CheckoutOrderSheet(
+      menu: menu,
+      userName: user['name'] ?? 'Pelanggan',
+      onConfirm: (newOrder) async {
+        try {
+          final apiService = ApiService(ApiClient().dio);
+          final customerId = int.tryParse(user['id']?.toString() ?? '') ?? 1;
+
+          final request = CreateOrderRequest(
+            customerId: customerId,
+            tanggalPengambilan: newOrder['tanggal_pengambilan'], // Format: YYYY-MM-DD HH:mm:ss
+            deliveryType: newOrder['delivery_type'],
+            deliveryAddress: newOrder['delivery_address'],
+            deliveryFee: newOrder['delivery_type'] == 'Delivery' ? 10000 : 0,
+            items: [
+              OrderItemModel(
+                menuName: menu['name'],
+                quantity: newOrder['quantity'],
+                unitPrice: menu['price'] ?? menu['base_price'] ?? 0,
+                customNotes: newOrder['custom_notes'],
+              )
+            ],
           );
-        },
-      ),
-    );
-  }
+
+          final response = await apiService.createOrder(request);
+
+          if (response.statusCode == 200 || response.statusCode == 201) {
+            final responseData = response.data is Map<String, dynamic>
+                ? response.data as Map<String, dynamic>
+                : <String, dynamic>{};
+            final orderData = responseData['data'] is Map<String, dynamic>
+                ? responseData['data'] as Map<String, dynamic>
+                : responseData;
+
+            context.read<CustomerCatalogBloc>().add(
+              CreateCustomerOrderEvent(
+                order: {
+                  ...newOrder,
+                  ...orderData,
+                  'status_pesanan': orderData['status_pesanan'] ?? 'waiting_approve',
+                },
+                userPhone: user['phone'] ?? '',
+              ),
+            );
+
+            _hubungiAdminWA(
+              'Halo Admin BatKitty, saya ${user['name']} membuat pesanan PO:\n\n'
+              'Menu: ${menu['name']}\n'
+              'Jumlah: ${newOrder['quantity']}\n'
+              'Tipe: ${newOrder['delivery_type']}\n'
+              'Mohon konfirmasinya.',
+            );
+            
+            Navigator.pop(context); 
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal membuat pesanan. Cek kembali jadwal pengambilan.')),
+          );
+        }
+      },
+    ),
+  );
+}
 
   void _handleCancel(BuildContext context, Map<String, dynamic> order) {
     CancelOrderDialog.show(

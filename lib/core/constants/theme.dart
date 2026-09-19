@@ -15,4 +15,6 @@ class BatKittyTheme {
   static const Color textSubtle = Color(0xFF64748B);
 
   static Color? get surfaceHighlight => null;
+
+  static ThemeData? get darkTheme => null;
 }

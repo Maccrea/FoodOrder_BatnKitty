@@ -1,6 +1,8 @@
+import 'package:batnkitty_food/data/services/order_api_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/local/app_seed.dart';
+import ''; 
 import 'admin_state.dart';
 
 abstract class AdminEvent {}
@@ -59,7 +61,11 @@ class UpdateStoreHoursEvent extends AdminEvent {
 }
 
 class AdminBloc extends Bloc<AdminEvent, AdminState> {
-  AdminBloc() : super(AdminState()) {
+  final OrderApiService _orderApiService;
+
+  AdminBloc({required OrderApiService orderApiService})
+      : _orderApiService = orderApiService,
+        super(AdminState()) {
     on<LoadAdminDataEvent>(_onLoadData);
     on<FilterAdminOrdersEvent>(_onFilterOrders);
     on<SelectOrderForDetailEvent>(_onSelectOrder);
@@ -72,27 +78,10 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<UpdateStoreHoursEvent>(_onUpdateStoreHours);
   }
 
-  void _onLoadData(LoadAdminDataEvent event, Emitter<AdminState> emit) {
-    final List<Map<String, dynamic>> rawList = [];
-
-    if (appSeed.containsKey('orders')) {
-      final list = (appSeed['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-      rawList.addAll(list);
-    }
-
-    final customers = (appSeed['customers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    for (var cust in customers) {
-      final custOrders = (cust['orders'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-      for (var o in custOrders) {
-        if (!rawList.any((existing) => existing['id'] == o['id'])) {
-          rawList.add({
-            ...o,
-            'customer_name': cust['name'] ?? 'Pelanggan',
-            'customer_phone': cust['phone'] ?? '-',
-          });
-        }
-      }
-    }
+Future<void> _onLoadData(LoadAdminDataEvent event, Emitter<AdminState> emit) async {
+  try {
+    final response = await _orderApiService.getOrders();
+    final List<dynamic> rawList = response.data['data'] ?? [];
 
     final normalizedOrders = rawList.map((order) {
       final itemMap = Map<String, dynamic>.from(order);
@@ -115,18 +104,16 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 
     normalizedOrders.sort((a, b) => (b['id'] ?? 0).compareTo(a['id'] ?? 0));
 
-    final menus = (appSeed['menus'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final expenses = (appSeed['expenses'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-
     emit(state.copyWith(
       allOrders: normalizedOrders,
-      menus: menus,
-      expenses: expenses,
       selectedOrder: normalizedOrders.isNotEmpty ? normalizedOrders.first : null,
       statusFilter: 'all',
       selectedDeliveryDate: DateTime(2026, 9, 7),
     ));
+  } catch (e) {
+    debugPrint('Gagal memuat data orders dari API: $e');
   }
+}
 
   void _onFilterOrders(FilterAdminOrdersEvent event, Emitter<AdminState> emit) {
     emit(state.copyWith(
@@ -144,52 +131,81 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     emit(state.copyWith(selectedDeliveryDate: event.date));
   }
 
-  void _onUpdateOrderStatus(UpdateAdminOrderStatusEvent event, Emitter<AdminState> emit) {
-    final updatedList = state.allOrders.map((o) {
-      if (o['id'] == event.orderId) {
-        final updated = Map<String, dynamic>.from(o);
-        updated['status_pesanan'] = event.newStatus;
-        if (event.reason != null) updated['cancellation_reason'] = event.reason;
-        if (event.newStatus == 'approved' || event.newStatus == 'completed') {
-          updated['status_bayar'] = 'Lunas';
-        }
-        return updated;
-      }
-      return o;
-    }).toList();
+  Future<void> _onUpdateOrderStatus(
+      UpdateAdminOrderStatusEvent event, Emitter<AdminState> emit) async {
+    try {
+      await _orderApiService.updateOrderStatus(event.orderId, event.newStatus);
 
-    emit(state.copyWith(
-      allOrders: updatedList,
-      selectedOrder: updatedList.firstWhere((o) => o['id'] == event.orderId),
-    ));
+      final updatedList = state.allOrders.map((o) {
+        if (o['id'] == event.orderId) {
+          final updated = Map<String, dynamic>.from(o);
+          updated['status_pesanan'] = event.newStatus;
+          if (event.reason != null) updated['cancellation_reason'] = event.reason;
+          if (event.newStatus == 'approved' || event.newStatus == 'completed') {
+            updated['status_bayar'] = 'Lunas';
+          }
+          return updated;
+        }
+        return o;
+      }).toList();
+
+      emit(state.copyWith(
+        allOrders: updatedList,
+        selectedOrder: updatedList.firstWhere((o) => o['id'] == event.orderId),
+      ));
+    } catch (e) {
+      debugPrint('Gagal update status pesanan ke API: $e');
+    }
   }
 
-  void _onUpdateDeliveryStatus(UpdateDeliveryStatusEvent event, Emitter<AdminState> emit) {
-    final updatedList = state.allOrders.map((o) {
-      if (o['id'] == event.orderId) {
-        final updated = Map<String, dynamic>.from(o);
-        if (event.nextStatus == 'Delivering') {
-          updated['status_pesanan'] = 'delivering';
-          updated['status_masak'] = 'Delivering';
-        } else if (event.nextStatus == 'Delivered') {
-          updated['status_pesanan'] = 'completed';
-          updated['status_masak'] = 'Selesai';
-          updated['status_bayar'] = 'Lunas';
-        }
-        return updated;
-      }
-      return o;
-    }).toList();
+  Future<void> _onUpdateDeliveryStatus(
+      UpdateDeliveryStatusEvent event, Emitter<AdminState> emit) async {
+    try {
+      String kitchenStatus = event.nextStatus == 'Delivering' ? 'Delivering' : 'Selesai';
+      
+      await _orderApiService.updateKitchenStatus(event.orderId, kitchenStatus);
 
-    emit(state.copyWith(allOrders: updatedList));
+      final updatedList = state.allOrders.map((o) {
+        if (o['id'] == event.orderId) {
+          final updated = Map<String, dynamic>.from(o);
+          if (event.nextStatus == 'Delivering') {
+            updated['status_pesanan'] = 'delivering';
+            updated['status_masak'] = 'Delivering';
+          } else if (event.nextStatus == 'Delivered') {
+            updated['status_pesanan'] = 'completed';
+            updated['status_masak'] = 'Selesai';
+            updated['status_bayar'] = 'Lunas';
+          }
+          return updated;
+        }
+        return o;
+      }).toList();
+
+      emit(state.copyWith(allOrders: updatedList));
+    } catch (e) {
+      debugPrint('Gagal update status pengiriman ke API: $e');
+    }
   }
 
-  void _onCreateCashierOrder(CreateCashierOrderEvent event, Emitter<AdminState> emit) {
-    final order = Map<String, dynamic>.from(event.newOrder);
-    order['customer_name'] = event.customerName;
-    order['customer_phone'] = event.customerPhone;
-    final updated = List<Map<String, dynamic>>.from(state.allOrders)..insert(0, order);
-    emit(state.copyWith(allOrders: updated, selectedOrder: order));
+  Future<void> _onCreateCashierOrder(
+      CreateCashierOrderEvent event, Emitter<AdminState> emit) async {
+    try {
+      await _orderApiService.registerCustomer(
+        name: event.customerName,
+        phone: event.customerPhone,
+      );
+
+      await _orderApiService.createOrder(event.newOrder);
+
+      final order = Map<String, dynamic>.from(event.newOrder);
+      order['customer_name'] = event.customerName;
+      order['customer_phone'] = event.customerPhone;
+      final updated = List<Map<String, dynamic>>.from(state.allOrders)..insert(0, order);
+      
+      emit(state.copyWith(allOrders: updated, selectedOrder: order));
+    } catch (e) {
+      debugPrint('Gagal membuat order kasir ke API: $e');
+    }
   }
 
   void _onAddExpense(AddExpenseEvent event, Emitter<AdminState> emit) {
